@@ -1,0 +1,51 @@
+package ${packageName};
+import javax.validation.constraints.*;
+import java.math.BigDecimal;
+#foreach($pkg in ${interface.importPackages})
+import ${pkg};
+#end
+public class ${className}{
+    #foreach($check in ${interface.checkList})
+        #if("$!check.desc" != "")
+            /**
+             * ${check.desc}
+             */
+        #end
+    ## ----------  入参是否有sql操作符  ----------
+        #if( ${check.operator}!=""  && $!{check.operator})
+        @Query(value = "${check.operator}")
+        #end
+
+    ##    ## ----------  入参是否有校验规则  ------------
+    ##        #if( ${check.rule}!="" && $!{check.rule} )
+    ##            #foreach($rule in ${check.rule})
+    ##    ## ----------  入参是否必填  ----------------
+    ###if( ${rule.type.equals("required")})
+    ##     ${check.validSymbol}(message ="${check.fieldName}必填" )
+    ###else
+    ##     @Pattern(regexp = "${rule.regex}",message = "${check.fieldName}${rule.abbreviation}${rule.message}")
+    ###end
+    ##            #end
+    ##        #end
+${check.validAnnotations}
+    private ${check.fieldJavaType} $check.alias;
+    #end
+
+
+##getter setter 等
+#if(!${entityLombokModel})
+    #foreach($check in ${interface.checkList})
+
+        public ${check.fieldJavaType} get${check.capitalName}(){
+                return ${check.alias};
+        }
+
+        public void set${check.capitalName}( ${check.fieldJavaType} ${check.alias}) {
+
+                this.${check.alias} = ${check.alias};
+        }
+
+    #end
+#end
+
+}

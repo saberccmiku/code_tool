@@ -1,0 +1,13 @@
+{
+  "insert":"新增",
+  "insertBatch":"批量新增",
+  "update":"修改",
+  "updateBatch":"批量修改",
+  "delete":"删除",
+  "deleteBatch":"批量删除",
+  "detail":"详情",
+  "list":"查询",
+  "pageList":"分页查询",
+  "editByCrit":"条件修改",
+  "delByCrit":"条件删除"
+}

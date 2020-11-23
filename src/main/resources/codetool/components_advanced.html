@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>组件库</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/index.js"></script>
+</head>
+
+<body>
+	<div id="app" class="content_wrap">
+		<div class="content_bg">
+			<el-row>
+				<el-col :span="12">
+					<el-button size="small" type="success">新增</el-button>
+					<el-button size="small" type="warning">修改</el-button>
+					<el-button size="small" type="danger">删除</el-button>
+				</el-col>
+				<el-col :span="12" style="text-align:right;">
+					<el-input type="text" size="small" v-model="name" style="width:250px;" clearable></el-input>
+					<el-button size="small" type="primary" @click="doQuery">查询</el-button>
+				</el-col>
+			</el-row>
+		</div>
+
+	</div>
+</body>
+
+
+</html>

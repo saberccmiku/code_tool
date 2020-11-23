@@ -1,0 +1,419 @@
+{
+  "dbConfig": {
+    "dbId": 5
+  },
+  "tableName": "ts_test_table",
+  "author": "huangwei",
+  "prefix": "ts",
+  "pUriAlias": "user",
+  "interfaces": [
+    {
+      "desc": "新增",
+      "method": "insert",
+      "checkList": [
+        {
+          "fieldName": "code",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "编码",
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "code",
+              "numbers": [
+                5,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "fieldName": "name",
+          "desc": "名称",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "custom",
+              "regex": "^.{3,6}$",
+              "abbreviation": "名称验证",
+              "message": "长度必须在3~6之间"
+            },
+            {
+              "type": "chinese"
+            }
+          ]
+        },
+        {
+          "fieldName": "info",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "信息",
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "email"
+            }
+          ]
+        },
+        {
+          "fieldName": "number",
+          "fieldType": "decimal",
+          "fieldLength": 255,
+          "desc": "排序",
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "desc": "批量新增",
+      "method": "insertBatch",
+      "checkList": [
+        {
+          "fieldName": "code",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "编码",
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "code",
+              "numbers": [
+                5,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "fieldName": "name",
+          "desc": "名称",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "custom",
+              "regex": "^.{3,6}$",
+              "abbreviation": "名称验证",
+              "message": "长度必须在3~6之间"
+            },
+            {
+              "type": "chinese"
+            }
+          ]
+        },
+        {
+          "fieldName": "info",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "信息",
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "email"
+            }
+          ]
+        },
+        {
+          "fieldName": "number",
+          "fieldType": "decimal",
+          "fieldLength": 255,
+          "desc": "排序",
+          "rule": [
+            {
+              "type": "required"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "desc": "修改",
+      "method": "update",
+      "checkList": [
+        {
+          "fieldName": "id",
+          "fieldType": "int",
+          "fieldLength": 255,
+          "desc": "主键",
+          "rule": [
+            {
+              "type": "required"
+            }
+          ]
+        },
+        {
+          "fieldName": "code",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "编码",
+          "rule": [
+            {
+              "type": "code",
+              "numbers": [
+                5,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "fieldName": "name",
+          "desc": "名称",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "rule": [
+            {
+              "type": "custom",
+              "regex": "^.{3,6}$",
+              "abbreviation": "名称验证",
+              "message": "长度必须在3~6之间"
+            },
+            {
+              "type": "chinese"
+            }
+          ]
+        },
+        {
+          "fieldName": "info",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "信息",
+          "rule": [
+            {
+              "type": "email"
+            }
+          ]
+        },
+        {
+          "fieldName": "number",
+          "fieldType": "decimal",
+          "fieldLength": 255,
+          "desc": "排序",
+          "rule": [
+            {
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "desc": "批量修改",
+      "method": "updateBatch",
+      "checkList": [
+        {
+          "fieldName": "id",
+          "fieldType": "int",
+          "fieldLength": 255,
+          "desc": "主键",
+          "rule": [
+            {
+              "type": "required"
+            }
+          ]
+        },
+        {
+          "fieldName": "code",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "编码",
+          "rule": [
+            {
+              "type": "code",
+              "numbers": [
+                5,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "fieldName": "name",
+          "desc": "名称",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "rule": [
+            {
+              "type": "custom",
+              "regex": "^.{3,6}$",
+              "abbreviation": "名称验证",
+              "message": "长度必须在3~6之间"
+            },
+            {
+              "type": "chinese"
+            }
+          ]
+        },
+        {
+          "fieldName": "info",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "信息",
+          "rule": [
+            {
+              "type": "email"
+            }
+          ]
+        },
+        {
+          "fieldName": "number",
+          "fieldType": "decimal",
+          "fieldLength": 255,
+          "desc": "排序",
+          "rule": [
+            {
+              "type": "number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "desc": "查询",
+      "method": "list",
+      "checkList": [
+        {
+          "fieldName": "code",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "编码",
+          "operator": "like",
+          "rule": []
+        },
+        {
+          "fieldName": "name",
+          "desc": "名称",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "operator": "eq",
+          "rule": [
+            {
+              "type": "custom",
+              "regex": "^.{3,6}$",
+              "abbreviation": "名称验证",
+              "message": "长度必须在3~6之间"
+            },
+            {
+              "type": "chinese"
+            }
+          ]
+        },
+        {
+          "fieldName": "info",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "operator": "like",
+          "desc": "信息",
+          "rule": [
+            {
+              "type": "email"
+            }
+          ]
+        },
+        {
+          "fieldName": "number",
+          "fieldType": "decimal",
+          "fieldLength": 255,
+          "desc": "排序",
+          "operator": "between",
+          "rule": []
+        }
+      ]
+    },
+    {
+      "desc": "分页查询",
+      "method": "pageList",
+      "checkList": [
+        {
+          "fieldName": "code",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "编码",
+          "operator": "like",
+          "rule": []
+        },
+        {
+          "fieldName": "name",
+          "desc": "名称",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "operator": "eq",
+          "rule": [
+            {
+              "type": "custom",
+              "regex": "^.{3,6}$",
+              "abbreviation": "名称验证",
+              "message": "长度必须在3~6之间",
+              "numbers": [
+                1,
+                2
+              ]
+            },
+            {
+              "type": "chinese"
+            }
+          ]
+        },
+        {
+          "fieldName": "info",
+          "fieldType": "varchar",
+          "fieldLength": 255,
+          "desc": "信息",
+          "rule": [
+            {
+              "type": "email"
+            }
+          ]
+        },
+        {
+          "fieldName": "number",
+          "fieldType": "decimal",
+          "fieldLength": 255,
+          "desc": "排序",
+          "operator": "orderByDesc",
+          "rule": []
+        }
+      ]
+    },
+    {
+      "desc": "详情",
+      "method": "detail",
+      "checkList": []
+    },
+    {
+      "desc": "删除",
+      "method": "delete",
+      "checkList": []
+    },
+    {
+      "desc": "批量删除",
+      "method": "deleteBatch",
+      "checkList": []
+    }
+  ]
+}

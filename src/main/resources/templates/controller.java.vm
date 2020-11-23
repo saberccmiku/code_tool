@@ -1,0 +1,184 @@
+package ${package.Controller};
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.tianhengyun.common.tang4jbase.support.ResponseModelFactory;
+import com.tianhengyun.common.tang4jbase.support.ResponseModel;
+import com.tianhengyun.common.tang4jbase.support.annotation.Query;
+import com.tianhengyun.common.tang4jbase.support.RequestPage;
+import com.tianhengyun.common.tang4jbase.support.ValidList;
+import com.tianhengyun.common.tang4jbase.utils.QueryWrapperUtil;
+import com.tianhengyun.common.tang4jbase.utils.ReflectUtil;
+import com.tianhengyun.common.tang4jbase.utils.ValidUtil;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import com.baomidou.mybatisplus.annotation.TableId;
+import java.io.Serializable;
+import java.util.List;
+#foreach($interface in ${cfg.generateConfig.interfaces})
+    #if("$!interface.checkList" != "")
+import ${cfg.generateConfig.packageConfig.packageName}.${cfg.generateConfig.packageConfig.requestEntity}.Request${entity}${interface.name};
+    #end
+#end
+#if(${restControllerStyle})
+#else
+#end
+
+#if(${superControllerClassPackage})
+import ${package.Entity}.${entity};
+import ${package.Service}.${table.serviceName};
+import ${superControllerClassPackage};
+#end
+
+/**
+ * <p>
+ * $!{table.comment} 前端控制器
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@RestController
+@RequestMapping("#if(${package.ModuleName})/${package.ModuleName}#end/#if(${controllerMappingHyphenStyle})${controllerMappingHyphen}#else${table.entityPath}s#end" )
+#if(${kotlin})
+class ${table.controllerName}#if(${superControllerClass}) : ${superControllerClass}()#end
+
+#else
+    #if(${superControllerClass})
+    public class ${table.controllerName} extends ${superControllerClass}<${table.serviceName}, ${entity}>{
+    #else
+    public class ${table.controllerName} {
+    #end
+public ${table.controllerName}(${table.serviceName} service){
+        super(service);
+        }
+
+/**
+ * @author fjy
+ * @since 2019-11-21
+ * 1.关于接口
+ * 父类controller自动实现了以下接口（如果子controller有@RequestMapping指定值 接口前要带上该值）
+ * 列表数据： /list
+ * 分页数据：/pageList
+ * 新增数据：/insert
+ * 修改数据：/update
+ * 删除数据：/delete
+ * 批量新增：/insertBatch
+ * 批量修改：/updateBatch
+ * 批量删除：/deleteBatch
+ * 数据详情：/detail
+ * 如需要拓展改接口信息 可在子service的iml接口重写对应的方法
+ * 如果需要修改接口uri可在本层重写对应的方法
+ * (默认接口查看AbstractController类uri，遵循restful风格)
+ *  1.关于入参校验
+ *  入参数据是集合，例如list 则需要使用ValidList(自定义的集合类继承自list，专门解决本问题)替换list保证对内部数据逐一校验，
+ *  参考insertBatch/deleteBatch/deleteBatch
+ */
+
+    #foreach($interface in ${cfg.generateConfig.interfaces})
+    ## ----------  start 方法  ----------
+    #if(${interface.method.equals("detail")})
+        #foreach($field in ${table.fields})
+            #if(${field.keyFlag})
+            ## 主键
+    ${interface.restfulAnnotation}("/${interface.method}/{${field.propertyName}}" )
+            public ResponseModel ${interface.method} (@PathVariable("${field.propertyName}") Serializable ${field.propertyName}) {
+               try {
+                 return ResponseModelFactory.OKWithData(this.service.getById(${field.propertyName}));
+               } catch (Exception e) {
+                 return ResponseModelFactory.error(e.getMessage());
+               }
+            }
+            #end
+        #end
+    #elseif(${interface.method.equals("delete")})
+        #foreach($field in ${table.fields})
+            #if(${field.keyFlag})
+            ## 主键
+                ${interface.restfulAnnotation}("/${interface.method}/{${field.propertyName}}" )
+            public ResponseModel ${interface.method} (@PathVariable("${field.propertyName}") Serializable ${field.propertyName}) {
+                    try {
+                    return ResponseModelFactory.OKWithData(this.service.removeById(${field.propertyName}));
+                    } catch (Exception e) {
+                    return ResponseModelFactory.error(e.getMessage());
+                    }
+                    }
+            #end
+        #end
+    #else
+    ${interface.restfulAnnotation}("/${interface.method}" )
+    public ResponseModel ${interface.method} (@Validated @RequestBody
+        #if(${interface.method.equals("insertBatch")} || ${interface.method.equals("updateBatch")})
+        ValidList<Request${entity}${interface.name}>
+        #elseif(${interface.method.equals("deleteBatch")})
+        ValidList<Integer>
+        #elseif(${interface.method.equals("pageList")})
+            #if( ${interface.checkList}!=""  && $!{interface.checkList})
+        RequestPage<Request${entity}${interface.name}>
+            #else
+        RequestPage<${entity}>
+            #end
+        #elseif(${interface.method.equals("list")})
+            #if( ${interface.checkList}!=""  && $!{interface.checkList})
+        Request${entity}${interface.name}
+            #else
+        ${entity}
+            #end
+        #else
+        Request${entity}${interface.name}
+        #end request, BindingResult bindingResult) {
+            try {
+            ValidUtil.validData(bindingResult);
+        #if(${interface.method.equals("list")})
+            #if( ${interface.checkList}!=""  && $!{interface.checkList})
+               return ResponseModelFactory.OKWithData(this.service.list(QueryWrapperUtil.createQueryWrapper(request));
+            #else
+               return ResponseModelFactory.OKWithData(this.service.list(QueryWrapperUtil.initFuzzyQuerySql(request)));
+            #end
+
+        #elseif(${interface.method.equals("pageList")})
+                IPage<${entity}> page = new Page<>(request.getCurrent(),request.getSize());
+            #if("$!interface.checkList" != "")
+               return ResponseModelFactory.OKWithData(this.service.page(page,QueryWrapperUtil.createQueryWrapper(request.getData())));
+            #else
+               return ResponseModelFactory.OKWithData(this.service.page(page,QueryWrapperUtil.initFuzzyQuerySql(request.getData())));
+            #end
+
+        #elseif(${interface.method.equals("insert")})
+                return ResponseModelFactory.OKWithData(this.service.save(ReflectUtil.copyProperties(request,${entity}.class)));
+        #elseif(${interface.method.equals("insertBatch")})
+                return ResponseModelFactory.OKWithData(this.service.saveOrUpdateBatch(ReflectUtil.copyProperties(request,${entity}.class)));
+        #elseif(${interface.method.equals("update")})
+                return ResponseModelFactory.OKWithData(this.service.updateById(ReflectUtil.copyProperties(request,${entity}.class)));
+        #elseif(${interface.method.equals("updateBatch")})
+                return ResponseModelFactory.OKWithData(this.service.saveOrUpdateBatch(ReflectUtil.copyProperties(request,${entity}.class)));
+        #elseif(${interface.method.equals("deleteBatch")})
+                return ResponseModelFactory.OKWithData(this.service.removeByIds(request));
+        #elseif(${interface.method.equals("editByCrit")})
+                if (!this.service.update(QueryWrapperUtil.createQueryWrapper(request))){
+                return ResponseModelFactory.error("editByCrit error");
+                }
+                return ResponseModelFactory.OK();
+        #elseif(${interface.method.equals("delByCrit")})
+                if (!this.service.remove(QueryWrapperUtil.createQueryWrapper(request))){
+                return ResponseModelFactory.error("delByCrit error");
+                }
+                return ResponseModelFactory.OK();
+        #else
+                return ResponseModelFactory.OK();
+        #end
+            } catch (Exception e) {
+            return ResponseModelFactory.error(e.getMessage());
+            }
+            }
+    #end
+        ## ----------  end 方法  ----------
+
+    #end
+
+}
+
+#end

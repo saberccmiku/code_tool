@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>组件库</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/index.js"></script>
+	<style>
+
+	</style>
+</head>
+
+<body>
+	<div id="app" class="content_wrap">
+		<div class="content_bg">
+			<el-row>
+				<el-col :span="12">
+					<el-button size="small" type="success" @click="doAdd">新增</el-button>
+				</el-col>
+				<el-col :span="12" style="text-align:right;">
+					<el-input type="text" size="small" v-model="name" style="width:250px;" clearable></el-input>
+					<el-button size="small" type="primary" @click="doSearch"
+						v-loading.fullscreen.lock="fullscreenLoading">
+						查询</el-button>
+				</el-col>
+			</el-row>
+			<div class="components_wrap">
+				<ul>
+					<li v-for="(item,index) in list" :key="index">
+						<div class="left">
+							<div class="img_wrap"></div>
+							<div class="info_wrap">
+								<h3>{{item.name}}</h3>
+								<p>组件类型：{{item.type}}</p>
+								<div>
+									<span>新增人：{{item.addUser}}</span>
+									<span>新增日期：{{item.addDate}}</span>
+								</div>
+							</div>
+						</div>
+						<div class="right">
+							<span class="btn_text" @click="handleDetail(item.id)">查看</span>
+							<span class="btn_line">/</span>
+							<span class="btn_text" @click="handleEdit(item.id)">修改</span>
+							<span class="btn_line">/</span>
+							<span class="btn_text" @click="handleDelete(item.id)">删除</span>
+							<!-- <el-button size="mini" type="primary" @click="handleDetail(item.id)">查看</el-button>
+							<el-button size="mini" type="warning" @click="handleEdit(item.id)">修改</el-button>
+							<el-button size="mini" type="danger" @click="handleDelete(item.id)">删除</el-button> -->
+						</div>
+					</li>
+				</ul>
+			</div>
+
+			<!-- 新增 弹框-->
+			<el-dialog :title="dialogTittle" :visible.sync="dialogFormVisible" :close-on-click-modal='false'
+				width="70%">
+				<el-form :model="addForm" label-width="180px" id="form">
+					<el-row>
+						<el-col :span="10">
+							<el-form-item label="组件名称">
+								<el-input v-model="addForm.name" :disabled="forEdit"></el-input>
+							</el-form-item>
+						</el-col>
+						<el-col :span="10">
+							<el-form-item label="组件类型">
+								<el-select v-model="addForm.type" placeholder="请选择组件类型" :disabled="forEdit"
+									@change="changeType">
+									<el-option v-for="item in typeOptions" :key="item.value" :label="item.label"
+										:value="item.value">
+									</el-option>
+								</el-select>
+							</el-form-item>
+						</el-col>
+						<el-col :span="4" style="text-align: center;">
+							<el-button size="small" type="success" icon="el-icon-plus" :disabled="forEdit"
+								@click="addAttr" v-show="addForm.type">添加属性
+							</el-button>
+						</el-col>
+					</el-row>
+
+
+					<el-row v-for="(item,index) in addForm.attrsChecked" :key="index">
+						<el-col :span="10">
+							<el-form-item label="属性名">
+								<el-select v-model="item.attr" placeholder="请选择属性名" :disabled="forEdit">
+									<el-option v-for="item1 in attrsList" :key="item1.id" :label='item1.label'
+										:value='item1.label'>
+									</el-option>
+								</el-select>
+							</el-form-item>
+						</el-col>
+						<el-col :span="10">
+							<el-form-item label="默认值">
+								<el-input v-model="item.value" :disabled="forEdit"></el-input>
+							</el-form-item>
+						</el-col>
+						<el-col :span="4" style="text-align: center;">
+							<el-button size="small" type="danger" icon="el-icon-delete" :disabled="forEdit"
+								@click="delAttr(index)">删除属性
+							</el-button>
+						</el-col>
+					</el-row>
+
+					<el-row v-show="addForm.type">
+						<el-col :span="24">
+							<el-form-item label="绑定事件">
+								<el-checkbox-group v-model="addForm.eventsChecked">
+									<el-checkbox v-for="(item,index) in eventsList" :key="index" :label="item">
+									</el-checkbox>
+								</el-checkbox-group>
+							</el-form-item>
+						</el-col>
+					</el-row>
+
+
+					<el-row>
+						<el-col :span="10">
+							<el-form-item label="新增人">
+								<el-input v-model="addForm.addUser" :disabled="true"></el-input>
+							</el-form-item>
+						</el-col>
+						<el-col :span="10">
+							<el-form-item label="新增日期">
+								<el-input v-model="addForm.addDate" disabled></el-input>
+							</el-form-item>
+						</el-col>
+					</el-row>
+
+					<!-- 修改/查看时显示修改信息，均为可读状态 -->
+					<el-row v-if="!isAdd">
+						<el-col :span="10">
+							<el-form-item label="修改人">
+								<el-input v-model="addForm.addUser" disabled></el-input>
+							</el-form-item>
+						</el-col>
+						<el-col :span="10">
+							<el-form-item label="修改日期">
+								<el-input v-model="addForm.addDate" disabled></el-input>
+							</el-form-item>
+						</el-col>
+					</el-row>
+
+				</el-form>
+				<div slot="footer" class="dialog-footer" v-if="isDetail">
+					<el-button @click="dialogFormVisible = false">关 闭</el-button>
+					<el-button type="primary" @click="changeToEdit">修 改</el-button>
+				</div>
+				<div slot="footer" class="dialog-footer" v-else>
+					<el-button @click="dialogFormVisible = false">取 消</el-button>
+					<el-button type="primary" @click="doSubmit('addForm')">提 交</el-button>
+				</div>
+			</el-dialog>
+		</div>
+
+	</div>
+
+
+	<script src="./components_data.js"></script>
+	<script src="./js/componentsConfig.js"></script>
+	<script>
+
+		var vm = new Vue({
+			el: '#app',
+			data() {
+				return {
+					name: "",
+					list: [],
+					dialogFormVisible: false, // 新增弹框显示/隐藏
+					typeOptions: [],  // 全部组件
+					attrsList: [], // 全部属性
+					eventsList: [],  // 全部事件
+					addForm: {
+						name: '',
+						type: '',
+						// 已添加属性
+						attrsChecked: [
+							// {
+							// 	id: 1,
+							// 	attr: '',
+							// }
+						],
+						eventsChecked: [],  // 已选中事件
+						addUser: '张三',
+						addDate: '2020-04-09'
+					},
+					dialogTittle: "", // 弹框标题
+					forEdit: false, // 默认为可编辑状态，为true时不可编辑
+					isAdd: true, // 是否是新增弹框
+					isDetail: false, // 是否查看弹框
+					curId: '', // 记录当前点击项
+					fullscreenLoading: false,
+				}
+
+			},
+			created() {
+				this.doSearch();
+
+				// 获取全部组件
+				for (let i = 0; i < BaseComponentsConfig.length; i++) {
+					const item = BaseComponentsConfig[i];
+					this.typeOptions.push({
+						value: item.name,
+						label: item.type
+					})
+				}
+
+			},
+			methods: {
+				// 查询  
+				doSearch() {
+					this.fullscreenLoading = true;
+					// 请求查询接口
+					// jQuery.ajax({
+					//     type: "GET",
+					//     url: "./list.json",
+					//     dataType: "json",
+					//     success: function (data) {
+					//         this.tableData = data.list;
+					//         this.dataTotal = data.list.length;
+					setTimeout(() => {
+						this.fullscreenLoading = false;
+						this.list = Base;
+					}, 500);
+
+					//     }, error: function (err) {
+					//         console.log(err);
+					//     }
+					// });
+				},
+				// 新增
+				doAdd() {
+
+					// this.addForm = {
+					// 	name: '',
+					// 	type: '',
+					// 	attrsList: [], // 全部属性
+					// 	// 已添加属性
+					// 	attrsChecked: [{
+					// 		attr: '',
+					// 		value: ''
+					// 	}],
+					// 	eventsList: [],  // 全部事件
+					// 	eventsChecked: [],  // 已选中事件
+					// 	addUser: '张三',
+					// 	addDate: '2020-04-09'
+					// };
+					this.dialogFormVisible = true;
+					this.dialogTittle = "新增";
+					// 设置表单元素为可编辑状态
+					this.forEdit = false;
+					this.isAdd = true;
+					this.isDetail = false;
+				},
+				// 查看
+				handleDetail(id) {
+					console.log(id);
+					this.dialogTittle = "查看";
+
+					// 根据id请求查看接口
+					// jQuery.ajax({
+					//     type: "GET",
+					//     url: ".",
+					//     dataType: "json",
+					//     success: function (data) {
+					// 成功后赋值给form
+					let _data = {
+						name: 'Input',
+						type: '单行文本',
+						attrsChecked: [{
+							attr: 'placeholder',
+							value: '请输入',
+						}],
+						eventsChecked: [],
+						addUser: '张三',
+						addDate: '2020-04-09'
+					}
+					this.addForm = _data;
+					// 设置表单元素为可读状态
+					this.forEdit = true;
+					// 有修改信息时，显示修改人和修改时间
+					this.isAdd = false;
+					this.isDetail = true;
+					this.dialogFormVisible = true;
+					// 记录当前点击项，用于在查看弹框点击修改
+					this.curId = id;
+					//     }, error: function (err) {
+					//         console.log(err);
+					//     }
+					// });
+
+				},
+				// 在查看弹框点击修改
+				changeToEdit() {
+					// 直接调修改方法
+					this.handleEdit(this.curId);
+				},
+				// 修改
+				handleEdit(id) {
+					console.log(id);
+					this.dialogTittle = "修改";
+
+					// 根据id请求修改接口
+					// jQuery.ajax({
+					//     type: "GET",
+					//     url: "",
+					//     dataType: "json",
+					//     success: function (data) {
+					// 成功后赋值给form
+					let _data = {
+						name: 'Input',
+						type: '单行文本',
+						attrsChecked: [{
+							attr: 'placeholder',
+							value: '请输入',
+						}],
+						eventsChecked: [],
+						addUser: '张三',
+						addDate: '2020-04-09'
+					}
+					this.addForm = _data;
+					// 设置表单元素为可编辑状态
+					this.forEdit = false;
+					// 显示修改人和修改时间
+					this.isAdd = false;
+					this.isDetail = false;
+					this.dialogFormVisible = true;
+					//     }, error: function (err) {
+					//         console.log(err);
+					//     }
+					// });
+				},
+				// 删除
+				handleDelete(id) {
+					console.log(id);
+
+					this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+					}).then(() => {
+						this.$message({
+							type: 'success',
+							message: '删除成功!'
+						});
+						// 成功后刷新列表
+						this.doSearch();
+					}).catch(() => {
+						this.$message({
+							type: 'info',
+							message: '已取消删除'
+						});
+					});
+				},
+
+				// 选择组件类型
+				changeType() {
+					let _this = this;
+					for (let i = 0; i < BaseComponentsConfig.length; i++) {
+						const item = BaseComponentsConfig[i];
+						if (item.name == _this.addForm.type) {
+							_this.attrsList = [];
+							for (let j = 0; j < item.attrs.length; j++) {
+								const item2 = item.attrs[j];
+								// 全部属性
+								_this.attrsList.push({
+									id: j + 1,
+									label: item2.attr,
+									value: item2.value
+								});
+							}
+							console.log(_this.attrsList);
+							// 全部事件
+							_this.eventsList = item.events;
+
+						}
+					}
+				},
+
+				// 添加属性
+				addAttr() {
+					let len = this.addForm.attrsChecked.length + 1;
+					this.addForm.attrsChecked.push({
+						id: len,
+						attr: '',
+					});
+
+				},
+
+				// 删除属性
+				delAttr(index) {
+					this.addForm.attrsChecked.splice(index, 1);
+				},
+
+				// 提交
+				doSubmit(formName) {
+					// 新增
+					if (this.isAdd) {
+						// this.$refs[formName].validate((valid) => {
+						// 	if (valid) {
+						// alert('submit!');
+						let arg = this.addForm;
+						console.log(arg);
+						for (let i = 0; i < arg.attrsChecked.length; i++) {
+							for (var j = i + 1; j < arg.attrsChecked.length; j++) {
+								if (arg.attrsChecked[i].attr == arg.attrsChecked[j].attr) {         //第一个等同于第二个，splice方法删除第二个
+									// arr.splice(j, 1);
+									// j--;
+									this.$message({
+										type: 'warning',
+										message: '属性名重复，请删除重复属性'
+									});
+									return;
+								}
+							}
+						}
+
+						let _this = this;
+						// jQuery.ajax({
+						// 	type: "POST",
+						// 	url: HOST + "dbType/add",
+						// 	data: JSON.stringify(arg),
+						// 	dataType: "json",
+						// 	contentType: "application/json",
+						// 	success: function (data) {
+						// 		// console.log(data);
+						// 		_this.dialogFormVisible = false;
+						// 		// 成功后刷新列表
+						// 		_this.doSearch();
+						// 	}, error: function (err) {
+						// 		console.log(err);
+						// 	}
+						// });
+
+						// 	} else {
+						// 		console.log('error submit!!');
+						// 		return false;
+						// 	}
+						// });
+					} else {
+						// 修改
+						this.$refs[formName].validate((valid) => {
+							if (valid) {
+								// alert('submit!');
+								let arg = this.addForm;
+
+								// console.log(arg);
+								let _this = this;
+								jQuery.ajax({
+									type: "POST",
+									url: HOST + "dbType/edit",
+									data: JSON.stringify(arg),
+									dataType: "json",
+									contentType: "application/json",
+									success: function (data) {
+										// console.log(data);
+										_this.dialogFormVisible = false;
+										// 成功后刷新列表
+										_this.doSearch();
+									}, error: function (err) {
+										console.log(err);
+									}
+								});
+
+							} else {
+								console.log('error submit!!');
+								return false;
+							}
+						});
+					}
+				},
+
+			}
+		})
+	</script>
+</body>
+
+
+</html>

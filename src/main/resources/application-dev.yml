@@ -1,0 +1,59 @@
+server:
+  servlet:
+    context-path: /
+  port: 9090
+  tomcat:
+    uri-encoding: utf-8
+
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.0.243:3306/smart_government_workflow?useUnicode=true&characterEncoding=utf8&serverTimezone=Hongkong
+    username: sa
+    password: tianheng2018
+    name: smart_government_workflow
+#    url: jdbc:mysql://localhost:3306/idoc?useUnicode=true&characterEncoding=utf8&serverTimezone=Hongkong&useSSL=false
+#    username: root
+#    password: passw0rd
+#    name: idoc
+  banner:
+    charset: UTF-8
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  messages:
+    encoding: UTF-8
+  servlet:
+    multipart:
+      max-file-size: 10MB
+
+mybatis-plus:
+  global-config:
+    db-config:
+      id-type: auto
+      field-strategy: not_empty
+      table-underline: true
+      db-type: mysql
+      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+#  type-aliases-package: com.tianheng.codetool.dao
+  mapper-locations: com/tianheng/codetool/dao/*.xml,com.tianheng.codetool.test.mapper/xml/*.xml
+
+
+#pagehelper分页插件配置
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params:
+    count: countSql
+
+logging:
+  level:
+    root: INFO
+    com.tianheng.codetool: DEBUG
+
+

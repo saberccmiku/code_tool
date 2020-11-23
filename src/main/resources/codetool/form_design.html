@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>查询设计中心</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./js/index.js"></script>
+    <script src="./js/uuid.js"></script>
+    <script src="lib/codemirror-5.52.2/lib/codemirror.js"></script>
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/lib/codemirror.css">
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/theme/ambiance.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/theme/monokai.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/addon/fold/foldgutter.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/addon/hint/show-hint.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/addon/lint/lint.css" rel="external nofollow" >
+
+    <script src="lib/codemirror-5.52.2/mode/xml/xml.js"></script>
+    <script src="lib/codemirror-5.52.2/mode/javascript/javascript.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/selection/active-line.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/selection/mark-selection.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/search/searchcursor.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/hint/show-hint.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/hint/javascript-hint.js"></script>
+
+
+    <script src="lib/codemirror-5.52.2/addon/comment/comment.js"></script>
+    <script src="lib/codemirror-5.52.2/keymap/sublime.js"></script>
+
+    <script src="lib/codemirror-5.52.2/addon/fold/foldcode.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/foldgutter.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/brace-fold.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/indent-fold.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/comment-fold.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/edit/closebrackets.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/edit/matchbrackets.js"></script>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+    }
+    .main{
+        width: 100%;
+        height:100%;
+    }
+    .pageLeft{
+        width: 300px;
+        float: left;
+        height: 100%;
+    }
+    .pageCenter{
+        width: calc(100% - 600px);
+        height: 100%;
+        float: left;
+    }
+    .pageRight{
+        width: 300px;
+        float: left;
+        height: 100%;
+        border-left: 1px solid #e6e6e6;
+    }
+    .tabsMenu{
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0px;
+    }
+    .tabsMenu li {
+        margin: 0;
+        padding: 0;
+        display: inline-block;
+        width: 100px;
+        height: 79px;
+        line-height: 79px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 20px;
+        background-color: #ffffff;
+        border-left: 1px solid #8da6ce;
+    }
+    .tabsMenu li.checked{
+        background-color: #8da6ce;
+        font-weight: bold;
+    }
+
+    .dialog{
+        display: none;
+        width: 900px;
+        height: 500px;
+        position: fixed;
+        z-index: 9999;
+        left: calc((100% - 900px)/2);
+        top: 100px;
+        background-color: #ffffff;
+        border: 1px solid #f4bf75;
+    }
+    .tabs {
+        width: 100%;
+        height: 50px;
+        list-style: none;
+    }
+    .tabs li{
+        display: inline-block;
+        width: 80px;
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .tabs li.actived{
+        color: #0055aa;
+        font-weight: bold;
+        border-bottom: 1px solid #0055aa;
+    }
+
+    .propTabs {
+        width: 100%;
+        height: 50px;
+        list-style: none;
+    }
+    .propTabs li{
+        display: inline-block;
+        width: calc(50% - 2px);
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .propTabs li.actived{
+        color: #0055aa;
+        font-weight: bold;
+        border-bottom: 1px solid #0055aa;
+    }
+
+    .propTable{
+        width: 100%;
+        margin-top: 10px;
+    }
+    .propTable tr{
+        height: 30px;
+        ling-height: 30px;
+    }
+    .propTable tr td{
+        border: 1px solid #5a647e;
+        font-size: 16px;
+        padding: 0 5px;
+    }
+
+    .controlList{
+        width: 100%;
+    }
+    .controlList li{
+        height: 26px;
+        line-height: 26px;
+        text-align: center;
+        margin: 2px 2px;
+        color: blue;
+        cursor: pointer;
+    }
+
+    .vueDomRow{}
+    .vueDomRow:hover{
+        border: 1px solid blue;
+    }
+
+
+    .ul_db{
+
+    }
+    .ul_db li{
+        padding: 0 5px;
+        font-size: 16px;
+        min-height: 26px;
+        color: #0055aa;
+        text-decoration:underline;
+        cursor: pointer;
+    }
+
+    .ul_table{
+        margin-left: 30px;
+
+    }
+</style>
+<body>
+<textarea id="vueCode" style="display: none;">
+    <el-row>
+        <el-table :data="tableData">
+            <el-table-column type="index" width="50"></el-table-column>
+            <el-table-column label="名称" prop="name" width="250"></el-table-column>
+            <el-table-column label="描述" prop="desc" width="250"></el-table-column>
+        </el-table>
+        <el-pagination
+                background
+                layout="prev, pager, next"
+                :total="1000">
+        </el-pagination>
+    </el-row>
+</textarea>
+
+<div class="main">
+    <div class="pageLeft">
+        <ul class="tabs">
+            <li class="actived" onclick="tabSelected(this)" tabindex="control"><p>组件库</p></li>
+            <li onclick="tabSelected(this)" tabindex="function"><p>函数库</p></li>
+            <li onclick="tabSelected(this)" tabindex="db"><p>数据源</p></li>
+        </ul>
+        <div id="controlList" style="width:100%;border:1px solid #cbccc6;">
+            <ul class="controlList">
+                <li onclick="addHtmlToVue('input')">input</li>
+                <li onclick="addHtmlToVue('select')">select</li>
+                <li onclick="addHtmlToVue('checkbox')">checkbox</li>
+                <li onclick="addHtmlToVue('radio')">radio</li>
+                <li onclick="addHtmlToVue('row')">row</li>
+                <li onclick="addHtmlToVue('switch')">switch</li>
+            </ul>
+        </div>
+        <div id="functionList" style="width:100%;border:1px solid #cbccc6;display: none;"></div>
+        <div id="dbList" style="width:100%;border:1px solid #cbccc6;display: none;">
+            <ul class="ul_db"></ul>
+        </div>
+    </div>
+    <div class="pageCenter">
+        <div style="height:80px;width:100%;background-color: #ffffff;border-bottom: 1px solid #e6e6e6;">
+            <ul class="tabsMenu">
+                <li class="checked">编辑</li>
+                <li>预览</li>
+                <li>下载源码</li>
+            </ul>
+        </div>
+        <div id="vueApp" style="background-color: #ffffff;width: 100%;height: calc(100% - 80px);">
+            <el-row class="vueDomRow">
+                <el-table :data="tableData">
+                    <el-table-column type="index" width="50"></el-table-column>
+                    <el-table-column label="名称" prop="name" width="250"></el-table-column>
+                    <el-table-column label="描述" prop="desc" width="250"></el-table-column>
+                </el-table>
+                <el-pagination
+                        background
+                        layout="prev, pager, next"
+                        :total="1000">
+                </el-pagination>
+            </el-row>
+        </div>
+    </div>
+
+    <div class="pageRight">
+        <ul class="propTabs">
+            <li class="actived" show="propTable" onclick="propTabSelected(this)"><p>属性</p></li>
+            <li show="eventTable" onclick="propTabSelected(this)"><p>事件</p></li>
+        </ul>
+        <div style="width: 100%;height: calc(100% - 50px);background-color: #ffffff;">
+            <table id="propTable" cellpadding="0" cellspacing="0" class="propTable" style="display: block;">
+                <tr>
+                    <td style="width: 100px;">type</td>
+                    <td><input type="text" name="type" /></td>
+                </tr>
+                <tr>
+                    <td>width</td>
+                    <td><input type="text" name="width" /></td>
+                </tr>
+                <tr>
+                    <td>height</td>
+                    <td><input type="text" name="height" /></td>
+                </tr>
+                <tr>
+                    <td>minlength</td>
+                    <td><input type="text" name="minlength" /></td>
+                </tr>
+                <tr>
+                    <td>maxlength</td>
+                    <td><input type="text" name="maxlength" /></td>
+                </tr>
+            </table>
+
+            <table id="eventTable" cellpadding="0" cellspacing="0" class="propTable" style="display: none;">
+                <tr>
+                    <td style="width: 100px;">click</td>
+                    <td><input type="text" name="type" /></td>
+                </tr>
+                <tr>
+                    <td>dbclick</td>
+                    <td><input type="text" name="width" /></td>
+                </tr>
+                <tr>
+                    <td>change</td>
+                    <td><input type="text" name="height" /></td>
+                </tr>
+                <tr>
+                    <td>blur</td>
+                    <td><input type="text" name="minlength" /></td>
+                </tr>
+                <tr>
+                    <td>focus</td>
+                    <td><input type="text" name="maxlength" /></td>
+                </tr>
+                <tr>
+                    <td>keydown</td>
+                    <td><input type="text" name="maxlength" /></td>
+                </tr>
+                <tr>
+                    <td>keypress</td>
+                    <td><input type="text" name="maxlength" /></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    var vm;
+    var myCodeMirror;
+
+    jQuery(function () {
+        loadDb();
+        vm = new Vue({
+            el: '#vueApp',
+            data() {
+                return {
+                    tnum: 12,
+                    tableData: []
+                }
+            }
+        });
+    });
+
+    
+
+
+    function createVueHtml(fieldLsit) {
+
+
+    }
+
+    function tabSelected(li) {
+        jQuery(li).parent().find("li").removeClass("actived");
+        jQuery(li).addClass("actived");
+        var tabindex = jQuery(li).attr("tabindex");
+        jQuery("#controlList").hide();
+        jQuery("#functionList").hide();
+        jQuery("#dbList").hide();
+        if(tabindex=="control"){
+            jQuery("#controlList").show();
+        }else if(tabindex=="function"){
+            jQuery("#functionList").show();
+        }else if(tabindex=="db"){
+            jQuery("#dbList").show();
+        }
+
+    }
+
+    function propTabSelected(li) {
+        jQuery(li).parent().find("li").removeClass("actived");
+        jQuery(li).addClass("actived");
+
+        var tableId = jQuery(li).attr("show");
+        jQuery("#propTable").hide();
+        jQuery("#eventTable").hide();
+
+        jQuery("#"+tableId).show();
+
+    }
+
+    var selectedDomId;
+
+    function addHtmlToVue(domType) {
+        var domId = Math.uuid();
+        var domId = domId.replace(/-/g,'');
+
+        domId = "d" + domId.substring(0,5);
+
+        var vueCodeValue = jQuery("#vueCode").prop("value");
+        if(domType=="input"){
+            vueCodeValue += '<div class="vueDomRow" domid="'+domId+'" onclick="selectedVueDom(this)"><el-row><el-input type="text" size="small" v-model="formData.'+domId+'"></el-input></el-row></div>';
+        }
+        if(domType=="select"){
+            vueCodeValue += '<div class="vueDomRow" domid="'+domId+'" onclick="selectedVueDom(this)"><el-row><el-select v-model="formData.'+domId+'" placeholder="请选择" style="width:300px;"><el-option label="选项一" value="1"></el-option></el-select></el-row></div>';
+        }
+        if(domType=="checkbox"){
+            vueCodeValue += '<div class="vueDomRow" domid="'+domId+'" onclick="selectedVueDom(this)"><el-row><el-checkbox v-model="formData.'+domId+'">备选项</el-checkbox></el-row></div>';
+        }
+        if(domType=="radio"){
+            vueCodeValue += '<div class="vueDomRow" domid="'+domId+'" onclick="selectedVueDom(this)"><el-row class="vueDomRow" @click="selectedDom(\''+domId+'\')"><el-radio v-model="formData.'+domId+'">备选项</el-radio></el-row></div>';
+        }
+        if(domType=="row"){
+            vueCodeValue += '<div class="vueDomRow" domid="'+domId+'" onclick="selectedVueDom(this)"><el-row style="height:30px;"><el-col :span="24"></el-col></el-row></div>';
+        }
+        if(domType=="switch"){
+            vueCodeValue += '<div class="vueDomRow" domid="'+domId+'" onclick="selectedVueDom(this)"><el-row><el-switch v-model="formData.'+domId+'"></el-switch></el-row></div>';
+        }
+        jQuery("#vueCode").prop("value", vueCodeValue);
+        jQuery("#vueApp").html(vueCodeValue);
+
+        vm = new Vue({
+            el: '#vueApp',
+            data() {
+                return {
+                    formData: {},
+                    tnum: 12,
+                    tableData: []
+                }
+            },
+            methods: {
+
+            }
+        });
+    }
+
+    function selectedVueDom(domObj) {
+        selectedDomId = jQuery(domObj).attr("domid");
+        console.log(selectedDomId);
+    }
+
+    function loadDb() {
+        let url = HOST + "dbInfo/all";
+        var responseData = doPost(url,{});
+        var dbs = responseData.list;
+        for(var i=0;i<dbs.length;i++){
+            var dbname = dbs[i].ip + "_" + dbs[i].name;
+            var html = '<li dbid="'+dbs[i].id+'" onclick="loadTables(this)"><p>'+dbname+'</p></li>';
+            jQuery(".ul_db").append(html);
+        }
+    }
+
+    function loadTables(li) {
+        var dbid = jQuery(li).attr("dbid");
+        var url = HOST + "dbInfo/getTables";
+        var responseData = doPost(url,{id: dbid});
+        var list = responseData.list;
+        var ul = jQuery('<ul class="ul_table"></ul>');
+        for(var i=0;i<list.length;i++){
+            var table = list[i];
+            var showName = table.tableName + "(" + table.tableComment + ")";
+            var html = '<li dbid="'+dbid+'" tablename="'+table.tableName+'" onclick="selectedTable(this)"><p><input type="radio" value=""/>'+showName+'</p></li>';
+            ul.append(html);
+        }
+        jQuery(li).append(ul);
+    }
+</script>
+</body>
+</html>

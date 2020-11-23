@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>查询设计中心</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./js/index.js"></script>
+    <script src="lib/codemirror-5.52.2/lib/codemirror.js"></script>
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/lib/codemirror.css">
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/theme/ambiance.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/theme/monokai.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/addon/fold/foldgutter.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/addon/hint/show-hint.css" rel="external nofollow" >
+    <link rel="stylesheet" href="lib/codemirror-5.52.2/addon/lint/lint.css" rel="external nofollow" >
+
+    <script src="lib/codemirror-5.52.2/mode/xml/xml.js"></script>
+    <script src="lib/codemirror-5.52.2/mode/javascript/javascript.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/selection/active-line.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/selection/mark-selection.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/search/searchcursor.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/hint/show-hint.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/hint/javascript-hint.js"></script>
+
+
+    <script src="lib/codemirror-5.52.2/addon/comment/comment.js"></script>
+    <script src="lib/codemirror-5.52.2/keymap/sublime.js"></script>
+
+    <script src="lib/codemirror-5.52.2/addon/fold/foldcode.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/foldgutter.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/brace-fold.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/indent-fold.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/fold/comment-fold.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/edit/closebrackets.js"></script>
+    <script src="lib/codemirror-5.52.2/addon/edit/matchbrackets.js"></script>
+</head>
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+    }
+    .main{
+        width: 100%;
+        height:100%;
+    }
+    .pageLeft{
+        width: 300px;
+        float: left;
+        height: 100%;
+        border-right: 1px solid #409eff;
+    }
+    .pageCenter{
+        width: calc(100% - 900px);
+        height: 100%;
+        float: left;
+    }
+    .pageRight{
+        width: 600px;
+        float: left;
+        height: 100%;
+    }
+    .tabsMenu{
+        list-style: none;
+    }
+    .tabsMenu li {
+        display: inline-block;
+        width: 100px;
+        height: 80px;
+        line-height: 80px;
+        background-color: #ffffff;
+        text-align: center;
+        font-size: 20px;
+    }
+
+    .tabsMenu li.actived{
+        font-weight: bold;
+        border-bottom: 2px solid #0055aa;
+    }
+
+    .dialog{
+        display: none;
+        width: 900px;
+        height: 500px;
+        position: fixed;
+        z-index: 9999;
+        left: calc((100% - 900px)/2);
+        top: 100px;
+        background-color: #ffffff;
+        border: 1px solid #f4bf75;
+    }
+
+    .ul_db{
+
+    }
+    .ul_db li{
+        padding: 0 5px;
+        font-size: 16px;
+        min-height: 26px;
+        color: #0055aa;
+        text-decoration:underline;
+        cursor: pointer;
+    }
+
+    .ul_table{
+        margin-left: 30px;
+
+    }
+
+
+    .propTable{
+        width: 100%;
+        margin-top: 10px;
+    }
+    .propTable tr{
+        height: 30px;
+        ling-height: 30px;
+    }
+    .propTable tr td{
+        border: 1px solid #5a647e;
+        font-family: "Microsoft YaHei UI";
+        font-size: 14px;
+        padding: 0 5px;
+    }
+
+
+
+    .fieldListTable {
+        width: 100%;
+        margin-top: 10px;
+    }
+    .fieldListTable tr th {
+        background-color: #d3dce6;
+        border: 1px solid #3E7087;
+    }
+    .fieldListTable tr td {
+        background-color: #ffffff;
+        border: 1px solid #3E7087;
+        text-align: center;
+    }
+
+    .fieldListTable tr td input{
+        height: 18px;
+        border: 1px solid rgb(169, 169, 169);
+    }
+
+</style>
+<body>
+<textarea id="vueCode" style="display: none;"></textarea>
+<div class="main">
+    <div class="pageLeft">
+        <p style="height: 30px;line-height: 30px;text-align: center;">数据源</p>
+        <div>
+            <ul class="ul_db">
+            </ul>
+        </div>
+    </div>
+    <div class="pageCenter">
+        <div style="height:100px;width:100%;background-color: #ffffff;">
+            <ul class="tabsMenu">
+                <li class="actived">编辑</li>
+                <li onclick="showPage()">预览</li>
+                <li>下载源码</li>
+            </ul>
+        </div>
+        <div id="vueApp"></div>
+    </div>
+
+    <div class="pageRight">
+        <div style="width: 100%;height: 100%;background-color: #ffffff;">
+            <table id="propTable" cellpadding="0" cellspacing="0" class="propTable">
+                <tr>
+                    <td style="width: 100px;">选择字段</td>
+                    <td id="selectFieldTd">
+                        <table id="selectedFieldList" class="fieldListTable">
+                            <tr>
+                                <th style="width: 30px"></th>
+                                <th style="width: 80px">字段</th>
+                                <th style="width: 80px">列宽</th>
+                                <th style="width: 80px">属性名</th>
+                                <th>格式化函数</th>
+                                <th style="width: 50px"><button onclick="addRowToTable()">增加</button></th>
+                            </tr>
+                            <tr>
+                                <td style="width: 30px">1</td>
+                                <td style="width: 80px"><select name="fieldList" style="width: 80px"><option value="">请选择</option></select></td>
+                                <td style="width: 80px"><input type="text" name="fieldWidth" style="width: 80px"/></td>
+                                <td style="width: 80px"><input type="text" name="propName" style="width: 80px"/></td>
+                                <td><input type="text" name="formatMethod" style="width: 80px"/></td>
+                                <td style="width: 50px"></td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+                <tr>
+                    <td>接口路径</td>
+                    <td><input type="text" name="showIndex" /></td>
+                </tr>
+                <tr>
+                    <td>显示序号</td>
+                    <td><input type="radio" name="showIndex" value="1" checked/>是<input type="radio" name="showIndex" value="0"/>否</td>
+                </tr>
+                <tr>
+                    <td>列表宽</td>
+                    <td><input type="text" name="width" /></td>
+                </tr>
+                <tr>
+                    <td>列表高</td>
+                    <td><input type="text" name="height" /></td>
+                </tr>
+                <tr>
+                    <td>使用分页</td>
+                    <td><input type="radio" name="showPaging" value="1" checked/>是<input type="radio" name="showPaging" value="0"/>否</td>
+                </tr>
+                <tr>
+                    <td>页码属性</td>
+                    <td><input type="text" name="pageNoProp" /></td>
+                </tr>
+                <tr>
+                    <td>行数属性</td>
+                    <td><input type="text" name="pageSizeProp" /></td>
+                </tr>
+                <tr>
+                    <td>总数属性</td>
+                    <td><input type="text" name="totalProp" /></td>
+                </tr>
+                <tr>
+                    <td>总页数属性</td>
+                    <td><input type="text" name="pagesProp" /></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: center;">
+                        <button onclick="createVueHtml()" style="width: 50px;height: 26px;line-height: 26px;text-align: center;background-color: #37f14a;border: 0;cursor: pointer;">确定</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    /*var vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                currentNode: "",
+                defaultProps: {
+                    children: 'children',
+                    label: 'name'
+                },
+                form: {},
+                rules: {},
+                tableData: []
+            }
+        },
+        created(){},
+        methods: {
+            handleNodeClick(data, node) {
+                if(node.level===2){
+                    this.form.dbName = node.data.dbId;
+                    this.form.tableName = node.data.tableName;
+                    this.fieldList = [];
+                    for(let i=0;i<node.childNodes.length;i++){
+                        this.fieldList.push(node.childNodes[i].data);
+                    }
+                }
+            },
+            loadTreeNode(node, resolve){
+                if (node.level === 0) {
+                    let url = HOST + "dbInfo/all";
+                    var responseData = doPost(url,{});
+                    var dbs = responseData.list;
+                    for(var i=0;i<dbs.length;i++){
+                        dbs[i].name = dbs[i].ip + "_" + dbs[i].name;
+                    }
+                    return resolve(dbs);
+                }else if(node.level === 1){
+                    let url = HOST + "dbInfo/getTables";
+                    var responseData = doPost(url,{id: node.data.id});
+                    let list = responseData.list;
+                    let tables = new Array();
+                    for(var i=0;i<list.length;i++){
+                        var table = list[i];
+                        table.name = table.tableName + "(" + table.tableComment + ")";
+                        table.dbId = node.data.id;
+                        tables.push(table);
+                    }
+                    return resolve(tables);
+                }else if(node.level === 2){
+                    let url = HOST + "dbInfo/getFields";
+                    var responseData = doPost(url,{id: node.data.dbId, tableName: node.data.tableName});
+                    let list = responseData.list;
+                    let fields = new Array();
+                    for(var i=0;i<list.length;i++){
+                        var field = list[i];
+                        field.name = field.columnName + "(" + field.columnComment + ")";
+                        fields.push(field);
+                    }
+                    return resolve(fields);
+                } else {
+                    return resolve([]);
+                }
+
+            },
+        }
+    });*/
+</script>
+<script>
+    var myCodeMirror;
+    var tableName;
+    var fieldList;
+    var tableDataUrl;
+    var showPaging = false;
+    var vm;
+    var page = {
+      pageNoStr: "",
+      pageSizeStr: "",
+      totalStr: "",
+      pagesStr: ""
+    };
+
+
+    jQuery(function () {
+        loadDb();
+    });
+
+    /*window.onload =function() {
+        loadDb();
+        var el = document.getElementById("codeMirror");
+        myCodeMirror = CodeMirror.fromTextArea(el, {
+            tabSize: 2,
+            styleActiveLine: true,
+            lineNumbers: true,
+            styleSelectedText: false,
+            line: true,
+            mode: 'text/javascript',
+            theme: 'ambiance',
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
+            hintOptions:{
+                // 当匹配只有一项的时候是否自动补全
+                completeSingle: false
+            },
+            //快捷键 可提供三种模式 sublime、emacs、vim
+            keyMap: "sublime",
+            matchBrackets: true,
+            showCursorWhenSelecting: true,
+            extraKeys: { "Ctrl": "autocomplete" }
+        });
+
+        // 编辑器按键监听
+        myCodeMirror.on("keypress", function () {
+        // 显示智能提示
+            myCodeMirror.showHint(); // 注意，注释了CodeMirror库中show-hint.js第131行的代码（阻止了代码补全，同时提供智能提示）
+        });
+    }*/
+
+    function loadDb() {
+        let url = HOST + "dbInfo/all";
+        var responseData = doPost(url,{});
+        var dbs = responseData.list;
+        for(var i=0;i<dbs.length;i++){
+            var dbname = dbs[i].ip + "_" + dbs[i].name;
+            var html = '<li dbid="'+dbs[i].id+'" onclick="loadTables(this)"><p>'+dbname+'</p></li>';
+            jQuery(".ul_db").append(html);
+        }
+    }
+
+    function loadTables(li) {
+        var dbid = jQuery(li).attr("dbid");
+        var url = HOST + "dbInfo/getTables";
+        var responseData = doPost(url,{id: dbid});
+        var list = responseData.list;
+        var ul = jQuery('<ul class="ul_table"></ul>');
+        for(var i=0;i<list.length;i++){
+            var table = list[i];
+            var showName = table.tableName + "(" + table.tableComment + ")";
+            var html = '<li dbid="'+dbid+'" tablename="'+table.tableName+'" onclick="selectedTable(this)"><p><input type="radio" value=""/>'+showName+'</p></li>';
+            ul.append(html);
+        }
+        jQuery(li).append(ul);
+    }
+
+    var fieldListByDB = new Array();
+    function selectedTable(li) {
+        event.stopPropagation();
+        var dbid = jQuery(li).attr("dbid");
+        var tablename = jQuery(li).attr("tablename");
+        let url = HOST + "dbInfo/getFields";
+        var responseData = doPost(url,{id: dbid, tableName: tablename});
+        let list = responseData.list;
+        fieldListByDB = list;
+        jQuery("select[name=fieldList]").empty();
+        jQuery("select[name=fieldList]").append('<option value="">请选择</option>');
+        for(var i=0;i<list.length;i++){
+            var field = list[i];
+            var fieldName = field.columnName + "(" + field.columnComment + ")";
+            var html;
+            /*if(i==list.length-1) {
+                html = '<input type="checkbox" value="' + field.columnName + '" columnComment="'+field.columnComment+'"/>' + fieldName;
+            }else{
+                html = '<input type="checkbox" value="' + field.columnName + '" columnComment="'+field.columnComment+'"/>' + fieldName+"<br/>";
+            }*/
+            html = '<option value="'+field.columnName+'" columncomment="'+field.columnComment+'">'+field.columnName+'</option>';
+            jQuery("select[name=fieldList]").append(html);
+        }
+    }
+    function addRowToTable() {
+        var rowNo = jQuery("#selectedFieldList tr").length;
+        var trHtml = '<tr><td style="width: 30px;">'+rowNo+'</td><td style="width: 80px"><select name="fieldList" placeholder="请选择字段" style="width: 80px"></select></td>\n' +
+            '                                <td style="width: 80px"><input type="text" name="fieldWidth" style="width: 80px"/></td>\n' +
+            '                                <td style="width: 80px"><input type="text" name="propName" style="width: 80px"/></td>\n' +
+            '                                <td><input type="text" name="formatMethod" style="width: 80px"/></td>\n' +
+            '                                <td style="width: 50px"></td>\n' +
+            '                            </tr>';
+        var tr = jQuery(trHtml);
+        tr.find("select[name=fieldList]").empty();
+        tr.find("select[name=fieldList]").append('<option value="">请选择</option>');
+
+        for(var i=0;i<fieldListByDB.length;i++){
+            var field = fieldListByDB[i];
+            var html;
+            html = '<option value="'+field.columnName+'" columncomment="'+field.columnComment+'">'+field.columnName+'</option>';
+            tr.find("select[name=fieldList]").append(html);
+        }
+        jQuery("#selectedFieldList").append(tr);
+    }
+    function showPage() {
+
+    }
+
+    /*
+     * 将带下划线的表名转换托峰字符串
+     */
+    function fmtStr(str) {
+        if(str.indexOf("_")==-1){
+            return str;
+        }
+        var arr = str.split("_");
+        var tmp = "";
+        for(var i=0;i<arr.length;i++){
+            if(i==0){
+                tmp += arr[i];
+            }else{
+                tmp += arr[i].substr(0, 1).toUpperCase() + arr[i].substr(1, arr[i].length-1);
+            }
+        }
+        return tmp;
+    }
+
+    function closeDialog() {
+        jQuery("#dialog").hide();
+    }
+
+    function createVueHtml() {
+        var fieldList = new Array();
+        var boxs = jQuery("select[name=fieldList]");
+        for(var i=0;i<boxs.length;i++){
+            if(jQuery(boxs[i]).val()) {
+                fieldList.push({
+                    fieldName: jQuery(boxs[i]).val(),
+                    fieldComment: jQuery(boxs[i]).find("option:selected").attr("columncomment"),
+                });
+            }
+        }
+
+        var showIndex = true;
+        var showCheckbox = true;
+        var showPaging = true;
+        //console.log(fieldList);
+        var html = '<el-table :data="tableData">\n';
+        if(showIndex){
+            html += '<el-table-column label="序号" type="index" width="50"></el-table-column>';
+        }
+        if(showCheckbox){
+            html += '<el-table-column type="selection" align="center" width="55"></el-table-column>';
+        }
+        for(var i=0;i<fieldList.length;i++){
+            var fieldName = fieldList[i].fieldName;
+            fieldName = fmtStr(fieldName);
+            html += '<el-table-column label="'+fieldList[i].fieldComment+'" prop="'+fieldName+'"></el-table-column>';
+        }
+        html += '        </el-table>';
+        if(showPaging) {
+            html += '        <el-pagination\n' +
+            '                background\n' +
+            '                layout="prev, pager, next"\n' +
+            '                :total="1000">\n' +
+            '        </el-pagination>';
+        }
+
+        //console.log(html);
+        jQuery("#vueApp").html(html);
+
+        vm = new Vue({
+            el: '#vueApp',
+            data() {
+                return {
+                    tableData: []
+                }
+            }
+        });
+    }
+
+</script>
+</body>
+</html>

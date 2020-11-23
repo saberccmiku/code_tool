@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>数据库类型</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/index.js"></script>
+</head>
+
+<body>
+	<div id="app" class="content_wrap">
+		<div class="content_bg">
+			<el-row>
+				<el-col :span="12">
+					<el-button size="small" type="success" @click="doAdd">新增</el-button>
+					<el-button size="small" type="danger" @click="doBatchDel">批量删除</el-button>
+				</el-col>
+				<el-col :span="12" style="text-align:right;">
+					<el-input type="text" size="small" v-model="name" style="width:250px;" clearable
+						placeholder="请输入数据库名称">
+					</el-input>
+					<el-button type="primary" size="small" @click="doSearch"
+						v-loading.fullscreen.lock="fullscreenLoading">查询
+					</el-button>
+				</el-col>
+			</el-row>
+			<!-- 表格 -->
+			<div class="table_wrap">
+				<el-table stripe ref="multipleTable"  :data="tableData" style="width: 100%;"
+					@selection-change="handleSelectionChange" height="100%"
+					:default-sort="{prop: 'date', order: 'descending'}">
+					<el-table-column type="selection" align="center" width="55"></el-table-column>
+					<el-table-column label="序号" type="index" align="center" width="50"></el-table-column>
+					<el-table-column label="数据库名称" prop="name" width="200"></el-table-column>
+					<el-table-column label="类别" prop="category" width="200"></el-table-column>
+					<el-table-column label="驱动" prop="driver"></el-table-column>
+					<el-table-column label="新增人" prop="addUser" align="center" width="150"></el-table-column>
+					<el-table-column label="新增日期" prop="addTime" align="center" width="220" sortable
+						:formatter="timeFormatter">
+					</el-table-column>
+					<el-table-column label="修改人" prop="editUser" align="center" width="150"></el-table-column>
+					<el-table-column label="修改日期" prop="editTime" align="center" width="220" sortable
+						:formatter="timeFormatter">
+					</el-table-column>
+					<el-table-column label="操作" align="center" width="180">
+						<template slot-scope="scope">
+							<span class="btn_text" @click="handleDetail(scope.$index, scope.row)">查看</span>
+							<span class="btn_line">/</span>
+							<span class="btn_text" @click="handleEdit(scope.$index, scope.row)">修改</span>
+							<span class="btn_line">/</span>
+							<span class="btn_text" @click="handleDelete(scope.$index, scope.row)">删除</span>
+						</template>
+					</el-table-column>
+				</el-table>
+				<!-- 分页 -->
+				<div class="pagination_wrap">
+					<el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" background
+						:current-page="currentPage" :page-sizes="pageSizes" :page-size="pageSize"
+						layout="total, sizes, prev, pager, next, jumper" :total="dataTotal">
+					</el-pagination>
+				</div>
+			</div>
+			<!-- 新增 弹窗 -->
+			<el-dialog :title="dialogTitle" :visible.sync="dialogFormVisible" :close-on-click-modal='false' width="70%">
+				<el-form :model="addForm" :rules="rules" ref="addForm" label-width="100px" id="form">
+					<el-form-item label="数据库名称" prop="name">
+						<el-input v-model="addForm.name" :disabled="forEdit" clearable></el-input>
+					</el-form-item>
+					<el-form-item label="类别" prop="category">
+						<el-select v-model="addForm.category" placeholder="请选择数据库类别" :disabled="forEdit">
+							<el-option v-for="item in options" :key="item.value" :label="item.label"
+								:value="item.value">
+							</el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item label="驱动" prop="driver">
+						<el-input v-model="addForm.driver" :disabled="forEdit" clearable></el-input>
+					</el-form-item>
+					<el-form-item label="新增人" prop="addUser">
+						<el-input v-model="addForm.addUser" :disabled="forEdit" clearable></el-input>
+					</el-form-item>
+					<el-form-item label="新增日期">
+						<el-input v-model="addForm.addTime" disabled></el-input>
+					</el-form-item>
+					<template v-if="!isAdd && hasEditer">
+						<el-form-item label="修改人" prop="editUser">
+							<el-input v-model="addForm.editUser" :disabled="forEdit" clearable></el-input>
+						</el-form-item>
+						<el-form-item label="修改日期">
+							<el-input v-model="addForm.editTime" disabled></el-input>
+						</el-form-item>
+					</template>
+				</el-form>
+				<div slot="footer" class="dialog-footer" v-if="isDetail">
+					<el-button @click="dialogFormVisible = false">关 闭</el-button>
+					<el-button type="primary" @click="changeToEdit">修 改</el-button>
+				</div>
+				<div slot="footer" class="dialog-footer" v-else>
+					<el-button @click="dialogFormVisible = false">取 消</el-button>
+					<el-button type="primary" @click="doSubmit('addForm')">提 交</el-button>
+				</div>
+			</el-dialog>
+		</div>
+	</div>
+</body>
+<script>
+	var vm = new Vue({
+		el: '#app',
+		data() {
+			return {
+				tHeight: document.body.clientHeight - 100,
+				name: "",
+				tableData: [],
+				currentPage: 1,
+				pageSizes: [10, 20, 50],
+				pageSize: 20,
+				dataTotal: 0,
+				multipleSelection: [], // 记录选中项
+				dialogFormVisible: false, // 新增弹框显示/隐藏
+				dialogTitle: "", // 弹框标题
+				addForm: {
+					name: '',
+					category: '',
+					driver: '',
+					addUser: '',
+					addTime: '',
+					editUser: '',
+					editTime: ''
+				},
+				rules: {
+					name: [
+						{ required: true, message: '请输入名称', trigger: 'blur' }
+					],
+					category: [
+						{ required: true, message: '请选择类别', trigger: 'change' }
+					],
+					driver: [
+						{ required: true, message: '请输入驱动', trigger: 'blur' }
+					],
+					addUser: [
+						{ required: true, message: '请输入新增人', trigger: 'blur' }
+					],
+					editUser: [
+						{ required: true, message: '请输入修改人', trigger: 'blur' }
+					]
+				},
+				options: [
+					{ value: '关系型数据库', label: '关系型数据库' },
+					{ value: '非关系型数据库', label: '非关系型数据库' }
+				],
+				forEdit: false, // 默认为可编辑状态，为true时不可编辑
+				isDetail: false, // 是否查看弹框
+				isAdd: true,
+				hasEditer: false,  // 是否有修改人
+				curIndex: 0, // 记录当前点击项
+				curRow: {}, // 记录当前点击项
+
+				fullscreenLoading: false,
+			}
+		},
+		created() {
+			this.doSearch();
+		},
+		methods: {
+			//查询
+			doSearch() {
+				this.fullscreenLoading = true;
+
+				let arg = {
+					name: this.name,
+					pageNum: this.currentPage,
+					pageSize: this.pageSize
+				};
+				let _this = this;
+				jQuery.ajax({
+					type: "POST",
+					url: HOST + "dbType/list",
+					data: JSON.stringify(arg),
+					dataType: "json",
+					contentType: "application/json",
+					success: function (data) {
+						setTimeout(() => {
+							_this.tableData = data.list;
+							_this.dataTotal = data.page.total;
+							_this.currentPage = data.page.pageNum;
+
+							_this.fullscreenLoading = false;
+						}, 500);
+
+					}, error: function (err) {
+						console.log(err);
+					}
+				});
+
+			},
+			// 新增日期格式化
+			timeFormatter(row, column, cellvalue) {
+				if (!cellvalue) {
+					return '';
+				}
+				if (typeof cellvalue == 'object') {
+					return cellvalue.format('yyyy-MM-dd');
+				}
+				var date = new Date(cellvalue);
+				return date.format('yyyy-MM-dd');
+			},
+
+			// 查看
+			handleDetail(index, row) {
+				// 选中当前行
+				this.$refs.multipleTable.clearSelection();
+				this.$refs.multipleTable.toggleRowSelection(row);
+
+				this.dialogTitle = "查看";
+				let arg = { id: row.id };
+				// 根据row.id请求查看接口
+				let _this = this;
+				jQuery.ajax({
+					type: "POST",
+					url: HOST + "dbType/detail",
+					data: JSON.stringify(arg),
+					dataType: "json",
+					contentType: "application/json",
+					success: function (data) {
+						// 成功后赋值给form
+						_this.addForm = data.data;
+						// 如果有修改人，则显示，否则隐藏
+						if (data.data.editUser) {
+							_this.hasEditer = true;
+						} else {
+							_this.hasEditer = false;
+						}
+						// 设置表单元素为可读状态
+						_this.forEdit = true;
+						// 有修改信息时，显示修改人和修改时间
+						_this.isAdd = false;
+						_this.isDetail = true;
+						_this.dialogFormVisible = true;
+						// 记录当前点击项，用于在查看弹框点击修改
+						_this.curIndex = index;
+						_this.curRow = row;
+					}, error: function (err) {
+						console.log(err);
+					}
+				});
+			},
+			// 在查看弹框点击修改
+			changeToEdit() {
+				// 直接调修改方法
+				this.handleEdit(this.curIndex, this.curRow);
+			},
+			// 选中项Change时触发
+			handleSelectionChange(val) {
+				this.multipleSelection = val;
+			},
+			// 修改
+			handleEdit(index, row) {
+				// 选中当前行
+				this.$refs.multipleTable.clearSelection();
+				this.$refs.multipleTable.toggleRowSelection(row);
+
+				this.dialogTitle = "修改";
+				let arg = { id: row.id };
+				// 根据row.id请求查看接口
+				let _this = this;
+				jQuery.ajax({
+					type: "POST",
+					url: HOST + "dbType/detail",
+					data: JSON.stringify(arg),
+					dataType: "json",
+					contentType: "application/json",
+					success: function (data) {
+						// 成功后赋值给form
+						_this.addForm = data.data;
+						// 默认设置修改日期为当前日期
+						_this.addForm.editTime = new Date().format("yyyy-MM-dd");
+						// 显示修改人
+						_this.hasEditer = true;
+
+						// 设置表单元素为可编辑状态
+						_this.forEdit = false;
+						// 显示修改人和修改时间
+						_this.isAdd = false;
+						_this.isDetail = false;
+
+						_this.dialogFormVisible = true;
+					}, error: function (err) {
+						console.log(err);
+					}
+				});
+
+			},
+			// 删除
+			handleDelete(index, row) {
+				// 选中当前行
+				this.$refs.multipleTable.clearSelection();
+				this.$refs.multipleTable.toggleRowSelection(row);
+
+				this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+					confirmButtonText: '确定',
+					cancelButtonText: '取消',
+					type: 'warning'
+				}).then(() => {
+					// 根据row.id请求删除接口
+					let arg = { id: row.id };
+					let _this = this;
+					jQuery.ajax({
+						type: "POST",
+						url: HOST + "dbType/delete",
+						data: JSON.stringify(arg),
+						dataType: "json",
+						contentType: "application/json",
+						success: function (data) {
+							// 成功后刷新列表
+							_this.doSearch();
+
+							_this.$message({
+								type: 'success',
+								message: '删除成功!'
+							});
+						}, error: function (err) {
+							console.log(err);
+						}
+					});
+
+				}).catch(() => {
+					this.$message({
+						type: 'info',
+						message: '已取消删除'
+					});
+				});
+			},
+			// 分页
+			handleSizeChange(val) {
+				this.pageSize = val;
+				this.doSearch();
+			},
+			handleCurrentChange(val) {
+				this.currentPage = val;
+				this.doSearch();
+			},
+			//新增
+			doAdd() {
+				this.addForm = {
+					name: '',
+					category: '',
+					driver: '',
+					addUser: '',
+					addTime: new Date().format("yyyy-MM-dd")  // 默认设置新增日期为当前日期
+				};
+				this.dialogFormVisible = true;
+				this.forEdit = false;
+				this.dialogTitle = "新增";
+				this.isAdd = true;
+				this.isDetail = false;
+			},
+
+			// 提交
+			doSubmit(formName) {
+				// 新增
+				if (this.isAdd) {
+					this.$refs[formName].validate((valid) => {
+						if (valid) {
+							let arg = this.addForm;
+
+							let _this = this;
+							jQuery.ajax({
+								type: "POST",
+								url: HOST + "dbType/add",
+								data: JSON.stringify(arg),
+								dataType: "json",
+								contentType: "application/json",
+								success: function (data) {
+									_this.dialogFormVisible = false;
+									// 成功后刷新列表
+									_this.doSearch();
+								}, error: function (err) {
+									console.log(err);
+								}
+							});
+
+						} else {
+							console.log('error submit!!');
+							return false;
+						}
+					});
+				} else {
+					// 修改
+					this.$refs[formName].validate((valid) => {
+						if (valid) {
+							let arg = this.addForm;
+
+							let _this = this;
+							jQuery.ajax({
+								type: "POST",
+								url: HOST + "dbType/edit",
+								data: JSON.stringify(arg),
+								dataType: "json",
+								contentType: "application/json",
+								success: function (data) {
+									_this.dialogFormVisible = false;
+									// 成功后刷新列表
+									_this.doSearch();
+								}, error: function (err) {
+									console.log(err);
+								}
+							});
+
+						} else {
+							console.log('error submit!!');
+							return false;
+						}
+					});
+				}
+
+
+			},
+			// 批量删除
+			doBatchDel() {
+				if (this.multipleSelection.length) {
+					this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+					}).then(() => {
+						let _ids = [];
+						for (let i = 0; i < this.multipleSelection.length; i++) {
+							const item = this.multipleSelection[i];
+							_ids.push(item.id)
+						}
+						// 根据row.id请求删除接口
+						let arg = { ids: _ids };
+						let _this = this;
+						jQuery.ajax({
+							type: "POST",
+							url: HOST + "dbType/deleteByIds",
+							data: JSON.stringify(arg),
+							dataType: "json",
+							contentType: "application/json",
+							success: function (data) {
+								// 成功后刷新列表
+								_this.doSearch();
+
+								_this.$message({
+									type: 'success',
+									message: '批量删除成功!'
+								});
+							}, error: function (err) {
+								console.log(err);
+							}
+						});
+
+					}).catch(() => {
+						this.$message({
+							type: 'info',
+							message: '已取消批量删除'
+						});
+					});
+
+				} else {
+					this.$message('请选择需要删除的项');
+				}
+			}
+		}
+	})
+
+</script>
+
+</html>

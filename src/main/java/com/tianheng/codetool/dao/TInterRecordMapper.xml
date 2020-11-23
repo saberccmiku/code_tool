@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tianheng.codetool.dao.TInterRecordMapper">
+
+  <!-- 通用查询映射结果 -->
+  <resultMap id="BaseResultMap" type="com.tianheng.codetool.model.TInterRecord">
+    <id column="id" property="id" />
+    <result column="db_id" property="dbId" />
+    <result column="table_name" property="tableName" />
+    <result column="add_user" property="addUser" />
+    <result column="add_time" property="addTime" />
+    <result column="svn_submit" property="svnSubmit" />
+    <result column="package_config" property="packageConfig" />
+    <result column="inter_config" property="interConfig" />
+    <result column="project_name" property="projectName" />
+  </resultMap>
+  <!-- 通用查询结果列 -->
+  <sql id="Base_Column_List">
+    <trim suffixOverrides=",">
+
+      T.id AS id,
+
+      T.db_id AS dbId,
+
+      T.table_name AS tableName,
+
+      T.add_user AS addUser,
+
+      T.add_time AS addTime,
+
+      T.svn_submit AS svnSubmit,
+
+      T.package_config AS packageConfig,
+
+      T.inter_config AS interConfig,
+
+      T.project_name AS projectName,
+    </trim>
+  </sql>
+
+  <select id="queryList" parameterType="com.tianheng.codetool.model.dto.InterRecordDto"
+    resultType="com.tianheng.codetool.model.dto.InterRecordDto">
+    select
+    <include refid="Base_Column_List" />
+    , t2.name
+    as dbName,t2.ip
+    from t_inter_record t
+    LEFT JOIN t_db_info t2 on t.db_id=t2.id
+    <if test="ew.emptyOfWhere == false">
+      ${ew.customSqlSegment}
+    </if>
+  </select>
+
+  <delete id="delete" parameterType="map">
+    delete from t_inter_record  t where db_id=#{dbId} and table_name=#{tableName}
+  </delete>
+
+</mapper>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tianheng.codetool.dao.TControlLibMapper">
+  <resultMap id="BaseResultMap" type="com.tianheng.codetool.model.TControlLib">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="type" jdbcType="VARCHAR" property="type" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="props" jdbcType="VARCHAR" property="props" />
+    <result column="events" jdbcType="VARCHAR" property="events" />
+    <result column="add_user" jdbcType="VARCHAR" property="addUser" />
+    <result column="add_time" jdbcType="TIMESTAMP" property="addTime" />
+    <result column="edit_user" jdbcType="VARCHAR" property="editUser" />
+    <result column="edit_time" jdbcType="TIMESTAMP" property="editTime" />
+  </resultMap>
+  <resultMap extends="BaseResultMap" id="ResultMapWithBLOBs" type="com.tianheng.codetool.model.TControlLibWithBLOBs">
+    <result column="img" jdbcType="LONGVARCHAR" property="img" />
+    <result column="code" jdbcType="LONGVARCHAR" property="code" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, type, name, props, events, add_user, add_time, edit_user, edit_time
+  </sql>
+  <sql id="Blob_Column_List">
+    img, code
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="ResultMapWithBLOBs">
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from t_control_lib
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_control_lib
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.tianheng.codetool.model.TControlLibWithBLOBs">
+    insert into t_control_lib (id, type, name, 
+      props, events, add_user, 
+      add_time, edit_user, edit_time, 
+      img, code)
+    values (#{id,jdbcType=INTEGER}, #{type,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, 
+      #{props,jdbcType=VARCHAR}, #{events,jdbcType=VARCHAR}, #{addUser,jdbcType=VARCHAR}, 
+      #{addTime,jdbcType=TIMESTAMP}, #{editUser,jdbcType=VARCHAR}, #{editTime,jdbcType=TIMESTAMP}, 
+      #{img,jdbcType=LONGVARCHAR}, #{code,jdbcType=LONGVARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.tianheng.codetool.model.TControlLibWithBLOBs">
+    insert into t_control_lib
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="type != null">
+        type,
+      </if>
+      <if test="name != null">
+        name,
+      </if>
+      <if test="props != null">
+        props,
+      </if>
+      <if test="events != null">
+        events,
+      </if>
+      <if test="addUser != null">
+        add_user,
+      </if>
+      <if test="addTime != null">
+        add_time,
+      </if>
+      <if test="editUser != null">
+        edit_user,
+      </if>
+      <if test="editTime != null">
+        edit_time,
+      </if>
+      <if test="img != null">
+        img,
+      </if>
+      <if test="code != null">
+        code,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="type != null">
+        #{type,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="props != null">
+        #{props,jdbcType=VARCHAR},
+      </if>
+      <if test="events != null">
+        #{events,jdbcType=VARCHAR},
+      </if>
+      <if test="addUser != null">
+        #{addUser,jdbcType=VARCHAR},
+      </if>
+      <if test="addTime != null">
+        #{addTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="editUser != null">
+        #{editUser,jdbcType=VARCHAR},
+      </if>
+      <if test="editTime != null">
+        #{editTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="img != null">
+        #{img,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="code != null">
+        #{code,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.tianheng.codetool.model.TControlLibWithBLOBs">
+    update t_control_lib
+    <set>
+      <if test="type != null">
+        type = #{type,jdbcType=VARCHAR},
+      </if>
+      <if test="name != null">
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="props != null">
+        props = #{props,jdbcType=VARCHAR},
+      </if>
+      <if test="events != null">
+        events = #{events,jdbcType=VARCHAR},
+      </if>
+      <if test="addUser != null">
+        add_user = #{addUser,jdbcType=VARCHAR},
+      </if>
+      <if test="addTime != null">
+        add_time = #{addTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="editUser != null">
+        edit_user = #{editUser,jdbcType=VARCHAR},
+      </if>
+      <if test="editTime != null">
+        edit_time = #{editTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="img != null">
+        img = #{img,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="code != null">
+        code = #{code,jdbcType=LONGVARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKeyWithBLOBs" parameterType="com.tianheng.codetool.model.TControlLibWithBLOBs">
+    update t_control_lib
+    set type = #{type,jdbcType=VARCHAR},
+      name = #{name,jdbcType=VARCHAR},
+      props = #{props,jdbcType=VARCHAR},
+      events = #{events,jdbcType=VARCHAR},
+      add_user = #{addUser,jdbcType=VARCHAR},
+      add_time = #{addTime,jdbcType=TIMESTAMP},
+      edit_user = #{editUser,jdbcType=VARCHAR},
+      edit_time = #{editTime,jdbcType=TIMESTAMP},
+      img = #{img,jdbcType=LONGVARCHAR},
+      code = #{code,jdbcType=LONGVARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.tianheng.codetool.model.TControlLib">
+    update t_control_lib
+    set type = #{type,jdbcType=VARCHAR},
+      name = #{name,jdbcType=VARCHAR},
+      props = #{props,jdbcType=VARCHAR},
+      events = #{events,jdbcType=VARCHAR},
+      add_user = #{addUser,jdbcType=VARCHAR},
+      add_time = #{addTime,jdbcType=TIMESTAMP},
+      edit_user = #{editUser,jdbcType=VARCHAR},
+      edit_time = #{editTime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+
+  <select id="selectList" parameterType="map" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/> from t_control_lib where 1=1
+    <if test="name!=null">and name like '${name}'</if>
+    <if test="type!=null">and type=#{type}</if>
+  </select>
+</mapper>

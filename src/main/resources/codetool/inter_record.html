@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>接口查询</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./js/index.js"></script>
+    <script src="./js/uuid.js"></script>
+</head>
+<style>
+    .el-form-item{
+        margin-bottom: 0px !important;
+    }
+</style>
+<body>
+<div id="app" class="content_wrap">
+    <div class="content_bg">
+        <el-row>
+            <el-col :span="12">
+                <el-button size="small" type="success" @click="doAdd">新增</el-button>
+                <el-button size="small" type="primary" @click="submitSvn">提交到SVN</el-button>
+                <el-button size="small" type="danger" @click="publish">发布</el-button>
+            </el-col>
+            <el-col :span="12" style="text-align:right;">
+                <el-input type="text" size="small" v-model="tableName" placeholder="请输入表名" style="width: 300px;" clearable>
+                </el-input>
+                <el-button size="small" type="primary" @click="doSearch">查询</el-button>
+            </el-col>
+        </el-row>
+        <!-- 表格 -->
+        <div class="table_wrap">
+            <el-table stripe ref="multipleTable" :data="tableData" tooltip-effect="dark" style="width: 100%;"
+                      height="100%" :default-sort="{prop: 'dbName', order: 'descending'}">
+                <el-table-column label="序号" type="index" align="center" width="60"></el-table-column>
+                <el-table-column label="数据库" prop="dbName"></el-table-column>
+                <el-table-column label="IP" prop="ip"></el-table-column>
+                <el-table-column label="表" prop="tableName"></el-table-column>
+                <el-table-column label="项目名" prop="projectName" align="center"></el-table-column>
+                <el-table-column label="代码文件" width="280">
+                    <template slot-scope="props">
+                        <el-tree :data="props.row.dirTree" :props="defaultProps" default-expand-all></el-tree>
+                    </template>
+                </el-table-column>
+                <el-table-column label="接口" align="center" width="320">
+                    <template slot-scope="props">
+                        <el-form label-width="100px" class="demo-table-expand" style="border: 1px solid #f4bf75;">
+                            <el-form-item v-for="item in props.row.interArr" :label="item.interName" align="left">
+                                <span>{{ item.interUri }}</span>
+                            </el-form-item>
+                        </el-form>
+                    </template>
+                </el-table-column>
+                <el-table-column label="新增人" prop="addUser" align="center" width="100"></el-table-column>
+                <el-table-column label="新增日期" prop="addTime" align="center" width="150" sortable
+                                 :formatter="timeFormatter">
+                </el-table-column>
+                <!--<el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <span class="btn_text" @click="handleDelete(scope.$index, scope.row)">删除</span>
+                    </template>
+                </el-table-column>-->
+            </el-table>
+            <!-- 分页 -->
+            <div class="pagination_wrap">
+                <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" background
+                               :current-page="currentPage" :page-sizes="pageSizes" :page-size="pageSize"
+                               layout="total, sizes, prev, pager, next, jumper" :total="dataTotal">
+                </el-pagination>
+            </div>
+        </div>
+    </div>
+
+    <el-dialog ref="svnDialog" title="待提交文件列表" :visible.sync="svnDialogVisible" :close-on-click-modal='false' width="50%">
+        <el-table :data="svnFileList" @selection-change="handleSelectionChange" height="300px">
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
+            <el-table-column label="文件路径" prop="filePath">
+            </el-table-column>
+        </el-table>
+        <el-row style="text-align: center;">
+            <el-button type="primary" @click="publish">提交</el-button>
+        </el-row>
+    </el-dialog>
+</div>
+<script>
+
+    var vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                tableName: "",
+                tableData: [],
+                currentPage: 1,
+                pageSizes: [1, 5, 10, 20],
+                pageSize: 20,
+                dataTotal: 0,
+                historyLen: window.frames.history.length,
+                svnDialogVisible: false,
+                svnFileList: [],
+                multipleSelection: [],
+                defaultProps: {
+                    children: 'children',
+                    label: 'name'
+                }
+            }
+        },
+        created() {
+            this.doSearch();
+        },
+        methods: {
+            //查询
+            doSearch() {
+                let url = HOST + "interRecord/list";
+                var responseData = doPost(url, {
+                    current: this.currentPage,
+                    size: this.pageSize,
+                    data: {
+                        tableName: this.tableName,
+                    }
+                });
+                this.tableData = responseData.data.records;
+                console.log(this.tableData);
+                this.dataTotal = responseData.data.total;
+                this.currentPage = responseData.data.current;
+            },
+            timeFormatter(row, column, cellvalue) {
+                if (!cellvalue) {
+                    return '';
+                }
+                if (typeof cellvalue == 'object') {
+                    return cellvalue.format('yyyy-MM-dd');
+                }
+                var date = new Date(cellvalue);
+                return date.format('yyyy-MM-dd');
+            },
+            // 分页
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.doSearch();
+            },
+            handleCurrentChange(val) {
+                this.currentPage = val;
+                this.doSearch();
+            },
+            handleDelete(index, row) {
+                let url = HOST + "interRecord/delete";
+                let params = {
+                    dbId: row.dbId,
+                    tableName: row.tableName
+                };
+                let responseData = doPost(url, params);
+                if (responseData.code == 200) {
+                    this.$message({
+                        type: "success",
+                        message: "操作成功"
+                    });
+                    this.doSearch();
+                } else {
+                    this.$message({
+                        type: "error",
+                        message: responseData.msg
+                    });
+                }
+            },
+            doAdd() {
+                location.href = "interface_gen.html";
+            },
+            submitSvn() {
+                let url = HOST + "interRecord/getSubmitFiles";
+                let responseData = doPost(url, {});
+                let list = responseData.list;
+                if(!list){
+                    this.$message({
+                        type: "warning",
+                        message: "没有可提交的文件"
+                    });
+                    return false;
+                }
+                this.svnFileList = [];
+                for(let i=0;i<list.length;i++){
+                    this.svnFileList.push({filePath:list[i]});
+                }
+                this.svnDialogVisible = true;
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            publish() {
+                if(this.multipleSelection.length==0){
+                    this.$message({
+                        type: "warning",
+                        message: "请选择文件进行提交"
+                    });
+                    return false;
+                }
+                let url = HOST + "interRecord/submitToSvn";
+                let responseData = doPost(url, this.multipleSelection);
+                if(responseData.code==200){
+                    this.$message({
+                        type: "success",
+                        message: "提交成功"
+                    });
+                    this.svnDialogVisible = false;
+                }else{
+                    this.$message({
+                        type: "error",
+                        message: responseData.msg
+                    });
+                }
+            }
+        }
+    });
+</script>
+</body>
+
+</html>

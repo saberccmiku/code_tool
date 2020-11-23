@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>代码生成工具</title>
+  <link rel="stylesheet" href="./css/index.css">
+  <script src="./js/index.js"></script>
+  <style>
+    /* 菜单样式 */
+    .el-menu {
+      background-color: #ffffff !important;
+      border-right: none;
+    }
+
+    .el-menu-item {
+      color: #666666;
+    }
+
+    .el-menu-item,
+    .el-submenu__title,
+    .el-submenu .el-menu-item {
+      height: 40px;
+      line-height: 40px;
+    }
+
+    .el-submenu__title {
+      color: #666666;
+    }
+
+    .el-menu-item:focus,
+    .el-menu-item:hover,
+    .el-submenu__title:hover {
+      background-color: #f7f7f7 !important;
+      color: #666666;
+    }
+
+    .el-menu-item:hover i,
+    .el-submenu__title:hover i {
+      color: inherit !important;
+    }
+
+    .el-menu-item:hover {
+      font-size: 15px;
+    }
+
+    .el-menu-item:focus {
+      color: #06a4fe;
+    }
+
+    .el-aside {
+      background-color: #ffffff !important;
+    }
+
+    .el-main {
+      background-color: #ecf0f5;
+      overflow: hidden;
+    }
+
+    .el-menu-item,
+    .el-submenu__title {
+      text-align: left;
+    }
+
+    .el-submenu .el-menu-item {
+      padding-left: 70px !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <el-container>
+      <el-aside width="200px">
+        <!-- default-active="1-1" -->
+        <el-menu class="el-menu-vertical-demo" default-active="1-2" @open="handleOpen" @close="handleClose">
+          <el-submenu index="1">
+            <template slot="title">
+              <i class="el-icon-share"></i>
+              数据源管理
+            </template>
+            <el-menu-item index="1-1" @click="openPage('dbType')">数据库类型</el-menu-item>
+            <el-menu-item index="1-2" @click="openPage('dbInfo')">数据库</el-menu-item>
+          </el-submenu>
+          <el-submenu index="2">
+            <template slot="title">
+              <i class="el-icon-menu"></i>
+              组件库
+            </template>
+            <el-menu-item index="2-1" @click="openPage('components_base')">基础组件</el-menu-item>
+            <el-menu-item index="2-2" @click="openPage('components_advanced')">高级组件</el-menu-item>
+          </el-submenu>
+          <!-- <el-menu-item index="2" @click="openPage('components')">
+            <i class="el-icon-menu"></i>
+            <span slot="title">组件库</span>
+          </el-menu-item> -->
+          <el-menu-item index="3" @click="openPage('function')">
+            <i class="el-icon-document"></i>
+            <span slot="title">函数库</span>
+          </el-menu-item>
+          <el-menu-item index="4" @click="openPage('style')">
+            <i class="el-icon-s-fold"></i>
+            <span slot="title">样式库</span>
+          </el-menu-item>
+          <el-menu-item index="5" @click="openPage('form_design')">
+            <i class="el-icon-s-marketing"></i>
+            <span slot="title">表单设计中心</span>
+          </el-menu-item>
+          <el-menu-item index="6" @click="openPage('query_design')">
+            <i class="el-icon-s-help"></i>
+            <span slot="title">查询设计中心</span>
+          </el-menu-item>
+          <el-menu-item index="7" @click="openPage('inter_record')">
+            <i class="el-icon-s-promotion"></i>
+            <span slot="title">接口设计</span>
+          </el-menu-item>
+        </el-menu>
+      </el-aside>
+      <el-main>
+        <!-- <el-button type="text" icon="el-icon-arrow-left" @click="back">返回上一页</el-button> -->
+
+        <iframe src="dbInfo.html" id="mainPage" style="height:100%;width:100%;border:0;"></iframe>
+      </el-main>
+    </el-container>
+
+  </div>
+  <script>
+    var vm = new Vue({
+      el: '#app',
+      data: function () {
+        return {
+        }
+
+      },
+      created: function () {
+
+      },
+      methods: {
+        handleOpen(key, keyPath) {
+          console.log(key, keyPath);
+        },
+        handleClose(key, keyPath) {
+          console.log(key, keyPath);
+        },
+        openPage(pageName) {
+          if (pageName) {
+            jQuery("#mainPage").attr("src", pageName + ".html");
+          }
+        },
+        // back() {
+        //   console.log(window.frames);
+        //   window.frames.history.back();
+        // }
+
+      }
+    })
+  </script>
+</body>
+
+</html>

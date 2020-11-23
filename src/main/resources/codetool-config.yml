@@ -1,0 +1,20 @@
+#代码生成工具配置
+codetool:
+  db:
+    driver-class-name: com.mysql.cj.jdbc.Driver #数据库驱动配置
+    url: jdbc:mysql://192.168.0.243:3306/code_gen_tool?useUnicode=true&characterEncoding=utf8&serverTimezone=Hongkong #数据库连接配置
+    username: sa #数据库用户
+    password: tianheng2018 #数据库用户密码
+  outputDir: D:\\IdeaProjects\\code_gen_tool\\codetool  #主项目物理路径，代码文件会生成在该目录下
+  packageName: com.tianhengyun.workflow  #包的根路径
+  controller: controller #cotnroller层的包目录名
+  service: service #service层的包目录名
+  mapper: mapper #dao层接口文件的包目录名
+  xml: mapper #mybatis xml文件的生成目录
+  entity: entity #实体类文件的包目录名
+  requestEntity: model.request
+  svn: #svn相关配置
+    url: https://192.168.0.240/svn/code_gen_tool/frontCode
+    user: huangwei
+    pwd: 123123
+  jenkinsUrl: #Jenkins自动部署条用连接

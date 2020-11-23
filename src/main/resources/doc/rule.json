@@ -1,0 +1,25 @@
+{
+  "required":"必填",
+  "number":"数字",
+  "numberLength":"定长的数字",//numbers需要传1个数字
+  "numberSize":"区间数字",//numbers需要传2个数字
+  "decimal":"保留小数位",//numbers需要传2个数字
+  "chinese":"汉字",
+  "strSize":"字符长度",//numbers需要传2个数字
+  "code":"编码",//numbers需要传2个数字
+  "account":"帐号",
+  "password":"密码",
+  "strongPassword":"强密码",
+  "email":"邮箱地址",
+  "web":"网站域名",
+  "url":"网址",
+  "mobile":"手机号码",
+  "telephone":"固定电话号码",
+  "phone": "固定国内电话号码",
+  "idCard":"身份证号",
+  "date":"日期格式",
+  "qq":"腾讯QQ号",
+  "post":"中国邮政编码",
+  "ip":"IP地址",
+  "custom": "自定义规则"
+}

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>接口生成</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./js/index.js"></script>
+    <script src="./js/uuid.js"></script>
+    <style>
+        .columnName {
+            padding-right: 10px;
+        }
+
+        .checkbox {
+            padding: 0 10px;
+        }
+
+        .el-table th {
+            padding: 9px 0;
+        }
+
+        .el-table td {
+            border-bottom: 1px solid #EBEEF5;
+        }
+    </style>
+</head>
+
+<body>
+<div id="app" class="content_wrap">
+    <div class="content_bg">
+        <el-row>
+            <el-button style="padding-top: 0;" type="text" icon="el-icon-arrow-left" @click="back">返回</el-button>
+        </el-row>
+        <el-row>
+            <el-col :span="8">
+                <el-form ref="form" :rules="rules" :model="form" label-width="100px" class="demo-ruleForm">
+                    <el-form-item label="数据源" prop="dbSource">
+                        <el-select v-model="form.dbId" filterable placeholder="请选择数据源" @change="dbSourceChange">
+                            <el-option v-for="item in dbList" :key="item.value" :label="item.label"
+                                       :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="表名" prop="tableName">
+                        <el-select v-model="form.tableName" filterable placeholder="请选择表名"
+                                   @change="tableNameChange">
+                            <el-option v-for="table in tableList" :key="table.tableName" :label="table.tableName"
+                                       :value="table.tableName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-collapse v-model="collapseActive">
+                            <el-collapse-item title="表字段" name="1">
+                                <el-table :data="fieldList" size="small">
+                                    <el-table-column prop="columnName" label="字段名" width="100"></el-table-column>
+                                    <el-table-column prop="columnComment" label="字段描述" width="120"></el-table-column>
+                                    <el-table-column prop="dataType" label="字段类型" width="80"></el-table-column>
+                                    <el-table-column prop="columnLength" label="字段长度" width="80"></el-table-column>
+                                    <el-table-column prop="decimalPlaces" label="小数位" width="80"></el-table-column>
+                                    <el-table-column label="可以为空" width="80">
+                                        <template slot-scope="scope">{{scope.row.isNullAble}}</template>
+                                    </el-table-column>
+                                </el-table>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </el-form-item>
+                    <el-form-item label="项目名" prop="projectName">
+                        <el-input v-model="form.projectName" placeholder="请输入项目名"></el-input>
+                    </el-form-item>
+                    <el-form-item label="忽略前缀" prop="prefix">
+                        <el-input v-model="form.prefix" placeholder="请输入忽略前缀"></el-input>
+                    </el-form-item>
+                    <el-form-item label="父级URI别名" prop="pUriAlias">
+                        <el-input v-model="form.pUriAlias" placeholder="请输入父级URI别名"></el-input>
+                    </el-form-item>
+                    <el-form-item label="作者" prop="author">
+                        <el-input v-model="form.author" placeholder="请输入作者"></el-input>
+                    </el-form-item>
+                    <el-form-item label="选择接口" prop="methods">
+                        <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="methodCheckAllChange">全选</el-checkbox>
+                        <el-checkbox-group v-model="form.methods" @change="handleCheckedMethodChange">
+                            <el-checkbox v-for="item in methodList" :key="item.value" :label="item.value">{{item.label}}</el-checkbox>
+                        </el-checkbox-group>
+                    </el-form-item>
+                </el-form>
+                <div style="text-align: center;">
+                    <el-button type="warning" @click="createDefault">生成默认接口</el-button>
+                    <el-button type="primary" @click="addDefault('form')">自定义接口</el-button>
+                    <el-button type="primary" @click="updateEntity">更新表映射实体类</el-button>
+                    <!--<el-button type="primary" @click="addOthers('form')">添加其他接口</el-button>-->
+                </div>
+            </el-col>
+            <el-col :span="16" style="padding: 0 20px">
+                <el-table stripe :data="interfaceList" size="small" v-if="interfaceList.length">
+                    <el-table-column type="index" width="50" align="center"></el-table-column>
+                    <el-table-column label="接口描述" prop="desc"></el-table-column>
+                    <el-table-column label="处理方法" prop="method" align="center" width="150"
+                                     :formatter="formatMethodValue">
+                    </el-table-column>
+                    <el-table-column prop="action" label="操作" align="center" width="180">
+                        <template slot-scope="scope">
+                            <span class="btn_text" @click="doEdit(scope.$index, scope.row)">修改</span>
+                            <span class="btn_line">/</span>
+                            <span class="btn_text" @click="doDelete(scope.$index, scope.row)">删除</span>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <div style="text-align: center;margin-top: 10px;" v-if="interfaceList.length">
+                    <el-button type="success" @click="createInterface">生成接口代码</el-button>
+                </div>
+            </el-col>
+        </el-row>
+
+        <el-dialog title="添加接口" :visible.sync="dialogVisible" top="5vh" width="98%" :close-on-click-modal="false"
+                   @open="dialogShow">
+            <el-form ref="interfaceForm" :rules="interfaceFormRules" :model="interfaceForm" label-width="80px"
+                     class="demo-ruleForm">
+                <el-form-item label="接口描述" prop="desc">
+                    <el-input v-model="interfaceForm.desc"></el-input>
+                </el-form-item>
+                <el-form-item label="处理方法" prop="method">
+                    <el-select v-model="interfaceForm.method">
+                        <el-option v-for="item in methodList" :key="item.label" :label="item.label"
+                                   :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="接口参数">
+                    <el-table ref="checkListTable" :data="interfaceForm.checkList" tooltip-effect="dark" border
+                              size="small" style="max-height: 600px;overflow: auto;"
+                              @select="handleSelection" @select-all="handleSelectAll"
+                              @selection-change="handleSelectionChange">
+                        <el-table-column type="selection" width="40" align="center">
+                        </el-table-column>
+                        <el-table-column prop="fieldName" label="字段名" width="180">
+                            <template slot-scope="scope">
+                                    <span v-if="!scope.row.rowNo">
+                                        {{scope.row.fieldName}}
+                                    </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="fieldType" label="字段类型" width="100">
+                            <template slot-scope="scope">
+                                    <span v-if="!scope.row.rowNo">
+                                        {{scope.row.fieldType}}
+                                    </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="fieldLength" label="字段长度" width="80">
+                            <template slot-scope="scope">
+                                    <span v-if="!scope.row.rowNo">
+                                        {{scope.row.fieldLength}}
+                                    </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="decimalPlaces" label="小数位" width="60">
+                            <template slot-scope="scope">
+                                    <span v-if="!scope.row.rowNo">
+                                        {{scope.row.decimalPlaces}}
+                                    </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="isNullAble" label="可以为空" width="80">
+                            <template slot-scope="scope">
+                                    <span v-if="!scope.row.rowNo">
+                                        {{scope.row.isNullAble}}
+                                    </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="alias" label="参数别名" width="120">
+                            <template slot-scope="scope">
+                                <el-input v-model="scope.row.alias"></el-input>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column prop="rule" label="字段校验" width="680">
+                            <template slot-scope="scope">
+                                <el-table :data="scope.row.rule" tooltip-effect="dark" border
+                                          size="small" style="max-height: 120px;overflow: auto;">
+                                    <el-table-column prop="type" label="验证规则" width="180">
+                                        <template slot-scope="rule">
+                                            <el-select v-model="rule.row.type" size="small" clearable
+                                                       @change="changeRuleType($event,rule.row)">
+                                                <el-option v-for="item in ruleTypeList" :key="item.label" :label="item.label"
+                                                           :value="item.value"></el-option>
+                                            </el-select>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="numbers" label="长度" width="240">
+                                        <template slot-scope="rule">
+                                            <el-autocomplete v-if="rule.row.showNumbers" class="inline-input"
+                                                             v-model="rule.row.numbers" :fetch-suggestions="querySearch"
+                                                             placeholder="请输入长度限制" @select="autocompleteSelected($event, rule.row)">
+                                            </el-autocomplete>
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column prop="regex" label="正则表达式">
+                                        <template slot-scope="rule">
+                                            <el-input type="text" v-model="rule.row.regex" size="small"
+                                                      v-if="rule.row.showRegex"></el-input>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="action" label="操作" width="60">
+                                        <template slot-scope="rule">
+                                            <el-button size="mini" type="danger" icon="el-icon-minus" circle v-if="rule.row.rowNo"
+                                                       @click="reduseCheckRuleRow(rule.$index, scope.row.rule)">
+                                            </el-button>
+                                            <el-button size="mini" type="success" icon="el-icon-plus" circle v-else
+                                                       @click="addCheckRuleRow(rule.$index, scope.row.rule)">
+                                            </el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column prop="operator" label="查询运算符">
+                            <template slot-scope="scope">
+                                <el-select v-model="scope.row.operator">
+                                    <el-option v-for="item in operatorList" :key="item.label" :label="item.label"
+                                               :value="item.value"></el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+
+                        <!--<el-table-column prop="action" label="操作" width="80">
+                            <template slot-scope="scope">
+                                <el-button size="mini" type="danger" icon="el-icon-minus" circle
+                                    v-if="scope.row.rowNo" @click="reduseRowByCheckList(scope.$index, scope.row)">
+                                </el-button>
+                                <el-button size="mini" type="success" icon="el-icon-plus" circle v-else
+                                    @click="addRowByCheckList(scope.$index, scope.row)">
+                                </el-button>
+                            </template>
+                        </el-table-column>-->
+                    </el-table>
+                </el-form-item>
+
+                <!--<el-form-item label="查询条件">
+                    <div class="checkbox">
+                        <el-checkbox v-model="interfaceForm.useQuery">有</el-checkbox>
+                    </div>
+
+                    <el-table :data="interfaceForm.queryList" border size="small" v-if="interfaceForm.useQuery">
+                        <el-table-column prop="fieldName" label="字段名">
+                            <template slot-scope="scope">
+                                <el-select v-model="scope.row.fieldName"
+                                    @change="((val)=>{changeQueryField(val, scope.row)})">
+                                    <el-option v-for="item in fieldList" :key="item.columnName"
+                                        :label="item.columnName" :value="item.columnName"></el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="fieldType" label="字段类型">
+                            <template slot-scope="scope">
+                                {{scope.row.fieldType}}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="alias" label="别名">
+                            <template slot-scope="scope">
+                                <el-input v-model="scope.row.alias"></el-input>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="operator" label="运算符">
+                            <template slot-scope="scope">
+                                <el-select v-model="scope.row.operator">
+                                    <el-option v-for="item in operatorList" :key="item.label" :label="item.label"
+                                        :value="item.value"></el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="action" label="操作" width="100">
+                            <template slot-scope="scope">
+                                <el-button size="mini" type="success" icon="el-icon-plus" circle
+                                    v-if="scope.$index==0" @click="addRowByQueryCri(scope.$index, scope.row)">
+                                </el-button>
+                                <el-button size="mini" type="danger" icon="el-icon-minus" circle v-else
+                                    @click="reduseRowByQueryCri(scope.$index, scope.row)">
+                                </el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-form-item>-->
+
+                <el-form-item label="" style="text-align: center;">
+                    <el-button type="primary" @click="addInterface">确定</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+    </div>
+
+</div>
+<script>
+    function tableNameToStr(tableName) {
+        var arr = tableName.split("_");
+        var str = "";
+        for(var i=0;i<arr.length;i++){
+            if(i==0){
+                str += arr[i].toLowerCase();
+            }else {
+                str += arr[i].substr(0,1).toUpperCase() + arr[i].substr(1,arr[i].length-1).toLowerCase();
+            }
+        }
+        return str;
+    }
+    var vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                dbList: [],  // 数据源
+                value: '',
+                sourceId: "",  // 选中的数据源id
+                tableName: "",  // 选中的表名
+                primaryKey: "", //选中表的主键
+                checkList: [],
+                tableList: [],
+                fieldList: [],
+                collapseActive: [],
+                dialogVisible: false,
+                isIndeterminate: true,
+                checkAll: false,
+                form: {
+                    dbId: "",
+                    tableName: "",
+                    prefix: "",
+                    author: "",
+                    pUriAlias: "",
+                    methods: []
+                },
+                rules: {
+                    dbId: [{ required: true, message: '请选择数据源', trigger: 'change' }],
+                    tableName: [{ required: true, message: '请选择表名', trigger: 'change' }]
+                },
+                interfaceForm: {
+                    desc: "",
+                    method: ""
+                },
+                interfaceFormRules: {
+                    desc: [
+                        { required: true, message: '接口描述不能是空', trigger: 'blur' }
+                    ],
+                    method: [
+                        { required: true, message: '处理方法不能是空', trigger: 'blur' }
+                    ]
+                },
+                ruleTypeList: [
+                    { label: "必填", value: "required" },
+                    { label: "数字", value: "number" },
+                    { label: "定长数字", value: "numberLength" },
+                    { label: "区间数字", value: "numberSize" },
+                    { label: "保留小数位", value: "decimal" },
+                    { label: "汉字", value: "chinese" },
+                    { label: "字符长度", value: "strSize" },
+                    { label: "编码", value: "code" },
+                    { label: "帐号", value: "account" },
+                    { label: "密码", value: "password" },
+                    { label: "强密码", value: "strongPassword" },
+                    { label: "邮箱地址", value: "email" },
+                    { label: "网站域名", value: "web" },
+                    { label: "网址", value: "url" },
+                    { label: "手机号码", value: "mobile" },
+                    { label: "固定电话号码", value: "telephone" },
+                    { label: "固定国内电话号码", value: "phone" },
+                    { label: "身份证号", value: "idCard" },
+                    { label: "日期格式", value: "date" },
+                    { label: "腾讯QQ号", value: "qq" },
+                    { label: "中国邮政编码", value: "post" },
+                    { label: "IP地址", value: "ip" },
+                    { label: "自定义规则", value: "custom" }
+
+                ],
+                operatorList: [
+                    { label: "等于", value: "eq" },
+                    { label: "不等于", value: "ne" },
+                    { label: "小于", value: "gt" },
+                    { label: "大于等于", value: "ge" },
+                    { label: "小于", value: "lt" },
+                    { label: "小于等于", value: "le" },
+                    { label: "between", value: "between" },
+                    { label: "not between", value: "notBetween" },
+                    { label: "like", value: "like" },
+                    { label: "not like", value: "notLike" },
+                    { label: "like左匹配", value: "likeLeft" },
+                    { label: "like右匹配", value: "likeRight" },
+                    { label: "字段 is null", value: "isNull" },
+                    { label: "字段 is not null", value: "isNotNull" },
+                    { label: "字段 in (v0,v1,v2...)", value: "in" },
+                    { label: "字段 not in (v0,v1,v2...)", value: "notIn" },
+                    { label: "字段in (sql语句)", value: "inSql" },
+                    { label: "字段not in(sql语句)", value: "notInSql" },
+                    { label: "分组", value: "groupBy" },
+                    { label: "倒序", value: "orderByDesc" },
+                    { label: "正序", value: "orderByAsc" },
+                    { label: "按字段排序", value: "orderBy" },
+                    { label: "having语句", value: "having" },
+                    { label: "拼接", value: "or" },
+                    { label: "嵌套", value: "and" },
+                    { label: "拼接sql", value: "apply" },
+                    { label: "无视优化规则直接拼接到sql最后", value: "last" },
+                    { label: "拼接exists语句", value: "exists" },
+                    { label: "拼接notExists语句", value: "notExists" },
+                    { label: "正常嵌套不带and和or", value: "nested" }
+                ],
+                methodList: [
+                    { label: "新增", value: "insert" },
+                    { label: "批量新增", value: "insertBatch" },
+                    { label: "修改", value: "update" },
+                    { label: "批量修改", value: "updateBatch" },
+                    { label: "删除", value: "delete" },
+                    { label: "批量删除", value: "deleteBatch" },
+                    { label: "详情", value: "detail" },
+                    { label: "查询", value: "list" },
+                    { label: "分页查询", value: "pageList" },
+                    { label: "条件修改", value: "editByCrit" },
+                    { label: "条件删除", value: "delByCrit" },
+                ],
+                interfaceList: [],
+                interfaceListIndex: "",
+                interfaceOp: "",
+                tmpArr: [],
+                addCheckListMethod: ["insert", "insertBatch", "update", "updateBatch", "deleteBatch", "editByCrit", "delByCrit"]
+            }
+        },
+        created() {
+            this.getAllDb();
+        },
+        methods: {
+            back() {
+                window.frames.history.back();
+            },
+            methodCheckAllChange(val){
+                let methods = [];
+                this.methodList.forEach((item)=>{
+                    methods.push(item.value);
+                });
+                this.form.methods = val ? methods : [];
+                this.isIndeterminate = false;
+            },
+            handleCheckedMethodChange(val){
+                let checkedCount = val.length;
+                this.checkAll = checkedCount === this.methodList.length;
+                this.isIndeterminate = checkedCount > 0 && checkedCount < this.methodList.length;
+            },
+            dialogShow() {
+                this.$nextTick(() => {
+                    for (let i = 0; i < this.interfaceForm.checkList.length; i++) {
+                        if (this.interfaceForm.checkList[i].selected) {
+                            this.$refs.checkListTable.toggleRowSelection(this.interfaceForm.checkList[i]);
+                        }
+                    }
+                });
+            },
+            // 获取数据源
+            getAllDb() {
+                // 获取数据源
+                let url = HOST + "dbInfo/all";
+                var responseData = doPost(url, {});
+                var dbs = responseData.list;
+                for (var i = 0; i < dbs.length; i++) {
+                    let _name = dbs[i].ip + "_" + dbs[i].name;
+                    this.dbList.push({ value: dbs[i].id, label: _name });
+                }
+            },
+
+            // 选择数据源，请求对应表名列表
+            dbSourceChange(dbId) {
+                this.sourceId = dbId;
+                this.form.tableName = "";
+                let url = HOST + "dbInfo/getTables";
+                var responseData = doPost(url, { id: dbId });
+                let list = responseData.list;
+                this.tableList = new Array();
+                for (var i = 0; i < list.length; i++) {
+                    var table = list[i];
+                    table.name = table.tableName + "(" + table.tableComment + ")";
+                    table.dbId = dbId;
+                    this.tableList.push(table);
+                }
+            },
+
+            // 选择表名，获取该表的全部字段
+            tableNameChange(tableName) {
+                this.tableName = tableName;
+                let url = HOST + "dbInfo/getFields";
+                var responseData = doPost(url, { id: this.sourceId, tableName: this.tableName });
+                if(responseData.code!=200){
+                    this.$message({
+                        type: "error",
+                        message: "数据库连接出现异常"
+                    });
+                    return false;
+                }
+                this.fieldList = responseData.list;
+                console.log(this.fieldList);
+                this.primaryKey = responseData.data;
+                this.checkList = [];
+                for (let i = 0; i < this.fieldList.length; i++) {
+                    const item = this.fieldList[i];
+                    let tmpJson = {
+                        fieldName: item.columnName,
+                        alias: tableNameToStr(item.columnName),
+                        fieldType: item.dataType,
+                        isNullAble: item.isNullAble,
+                        fieldLength: item.columnLength,
+                        decimalPlaces: item.decimalPlaces,
+                        rule: [
+                            {
+                                type: "required",
+                                numbers: [],
+                                showNumbers: false,
+                                regex: ""
+                            }
+                        ],
+                        selected: false,
+                        operator: ""
+                    };
+                    if(item.dataType=="varchar"){
+                        tmpJson.rule.push({
+                            rowNo: Math.uuid(),
+                            type: "strSize",
+                            numbers: "0,"+item.columnLength,
+                            showNumbers: true,
+                            regex: "",
+                        });
+                    }
+                    this.checkList.push(tmpJson);
+                }
+            },
+            // 全选
+            handleSelection(selection, row) {
+                if (row.selected) {
+                    row.selected = false;
+                } else {
+                    row.selected = true;
+                }
+            },
+            handleSelectAll(selection) {
+                for (let i = 0; i < this.interfaceForm.checkList.length; i++) {
+                    if (selection.length == 0) {
+                        this.interfaceForm.checkList[i].selected = false;
+                    } else {
+                        this.interfaceForm.checkList[i].selected = true;
+                    }
+                }
+            },
+            handleSelectionChange(val) {
+                this.tmpArr = val;
+            },
+            //参数字段，加一行
+            addRowByCheckList(index, row) {
+                let rowNo = Math.uuid();
+                let _row = {
+                    rowNo: rowNo,
+                    fieldName: row.fieldName,
+                    fieldLength: row.fieldLength,
+                    decimalPlaces: row.decimalPlaces,
+                    fieldType: row.fieldType,
+                    rule: [],
+                    selected: false
+                };
+                this.interfaceForm.checkList.splice(index + 1, 0, _row);
+            },
+            // 校验字段，减一行
+            reduseRowByCheckList(index, row) {
+                this.interfaceForm.checkList.splice(index, 1);
+            },
+            // 查询条件，加一行
+            addRowByQueryCri(index, row) {
+                let rowNo = Math.uuid();
+                this.interfaceForm.queryList.splice(index + 1, 0, { rowNo: rowNo });
+            },
+            addCheckRuleRow(index, rules){
+                let rowNo = Math.uuid();
+                rules.splice(index + 1, 0, { rowNo: rowNo });
+            },
+            reduseCheckRuleRow(index, rules){
+                rules.splice(index, 1);
+            },
+            // 查询条件，减一行
+            reduseRowByQueryCri(index, row) {
+                this.interfaceForm.queryList.splice(index, 1);
+            },
+
+            formatMethodValue(row, column, cellvalue) {
+                for (let i = 0; i < this.methodList.length; i++) {
+                    if (cellvalue == this.methodList[i].value) {
+                        return this.methodList[i].label;
+                    }
+                }
+                return cellvalue;
+
+            },
+            checkInAddCheckList(val) {
+                for (let i = 0; i < this.addCheckListMethod.length; i++) {
+                    if (val == this.addCheckListMethod[i]) {
+                        return true;
+                    }
+                }
+                return false;
+            },
+            // 添加默认接口
+            addDefault(formName) {
+                if(this.form.methods.length==0){
+                    this.$message({
+                        type: "warning",
+                        message: "请选择生成接口"
+                    });
+                    return false;
+                }
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        this.interfaceList = [];
+                        let mtdList = [];
+                        for(let i=0;i<this.form.methods.length;i++){
+                            for(let j=0;j<this.methodList.length;j++){
+                                if(this.form.methods[i]==this.methodList[j].value){
+                                    mtdList.push(this.methodList[j]);
+                                }
+                            }
+                        }
+                        for (let i = 0; i < mtdList.length; i++) {
+                            let tmpJson = {
+                                desc: mtdList[i].label,
+                                method: mtdList[i].value,
+                                checkList: ""
+                            };
+
+                            let arr = new Array();
+                            arr = this.checkList;
+                            for(let k=0;k<arr.length;k++){
+                                arr[k].selected = false;
+                            }
+                            if (this.checkInAddCheckList(mtdList[i].value)) {
+                                for(let k=0;k<arr.length;k++){
+                                    arr[k].selected = true;
+                                }
+                            }
+                            if("insert"==mtdList[i].value || "insertBatch"==mtdList[i].value){
+                                for(let k=0;k<arr.length;k++){
+                                    if(arr[k].fieldName==this.primaryKey){
+                                        arr[k].selected = false;
+                                    }
+                                }
+                            }
+
+                            tmpJson.checkList = JSON.stringify(arr);
+                            this.interfaceList.push(tmpJson);
+                        }
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+
+            // 添加其他接口
+            addOthers(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        this.interfaceForm = {
+                            desc: "",
+                            method: "",
+                            useQuery: false,
+                            checkList: this.checkList
+                        };
+                        this.interfaceOp = "add";
+                        this.dialogVisible = true;
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+
+            // 修改
+            doEdit(index, row) {
+                this.interfaceForm = {
+                    desc: row.desc,
+                    method: row.method,
+                    checkList: typeof row.checkList == "string" ? jQuery.parseJSON(row.checkList) : row.checkList,
+                };
+
+                this.interfaceOp = "edit";
+                this.interfaceListIndex = index;
+                this.dialogVisible = true;
+            },
+            // 删除
+            doDelete(index, row) {
+                this.interfaceList.splice(index, 1);
+            },
+            // 确定
+            addInterface() {
+                // 查询条件
+                if (this.interfaceOp == "add") {
+                    this.interfaceList.push({
+                        desc: this.interfaceForm.desc,
+                        method: this.interfaceForm.method,
+                        checkList: JSON.stringify(this.interfaceForm.checkList),
+                    });
+                } else if (this.interfaceOp == "edit") {
+                    this.interfaceList[this.interfaceListIndex].desc = this.interfaceForm.desc;
+                    this.interfaceList[this.interfaceListIndex].method = this.interfaceForm.method;
+                    this.interfaceList[this.interfaceListIndex].checkList = JSON.stringify(this.interfaceForm.checkList);
+                }
+                this.interfaceForm = {};
+                this.dialogVisible = false;
+            },
+            changeQueryField(val, row) {
+                for (let i = 0; i < this.fieldList.length; i++) {
+                    if (this.fieldList[i].columnName == val) {
+                        row.fieldType = this.fieldList[i].dataType;
+                        row.alias = tableNameToStr(this.fieldList[i].columnName);
+                    }
+                }
+            },
+            changeRuleType(selectedVal, row) {
+                if (selectedVal == "custom") {
+                    row.showRegex = true;
+                } else {
+                    row.showRegex = false;
+                }
+                if (selectedVal == "numberLength" || selectedVal == "numberSize" || selectedVal == "decimal" || selectedVal == "strSize" || selectedVal == "code") {
+                    row.showNumbers = true;
+                } else {
+                    row.showNumbers = false;
+                }
+            },
+            querySearch(queryString, cb) {
+                var results = [{
+                    "value": "定长长度格式：10",
+                    "str": "10"
+                },
+                    {
+                        "value": "其他长度限制格式：3,20",
+                        "str": "3,20"
+                    }];
+                cb(results);
+            },
+            autocompleteSelected(item, row) {
+                row.numbers = item.str;
+            },
+
+            createDefault(){
+                this.$refs["form"].validate((valid) => {
+                    if (valid) {
+                        let params = {
+                            dbConfig: {
+                                dbId: this.form.dbId,
+                            },
+                            tableName: this.form.tableName,
+                            author: this.form.author,
+                            prefix: this.form.prefix,
+                            pUriAlias: this.form.pUriAlias
+                        };
+
+                        console.log(JSON.stringify(params));
+
+                        let self = this;
+                        let url = HOST + "generate/lazyCreate";
+                        let data = doPost(url, params);
+                        if (data.code == 200) {
+                            self.$message({
+                                type: "success",
+                                message: "操作完成！"
+                            });
+                            setTimeout("location.reload()", 2000);
+                        } else {
+                            self.$message({
+                                type: "warning",
+                                message: data.message
+                            });
+                        }
+
+                    }
+                });
+            },
+
+            updateEntity(){
+                if(!this.form.dbId){
+                    this.$message({
+                        type: "warning",
+                        message: "请选择数据库"
+                    });
+                    return false;
+                }
+                if(!this.form.tableName){
+                    this.$message({
+                        type: "warning",
+                        message: "请选择表"
+                    });
+                    return false;
+                }
+                let params = {
+                    dbId: this.form.dbId,
+                    tableName: this.form.tableName
+                };
+
+                console.log(JSON.stringify(params));
+                let self = this;
+                let url = HOST + "generate/lazyCreate";
+                if (data.code == 200) {
+                    self.$message({
+                        type: "success",
+                        message: "操作完成！"
+                    });
+                    setTimeout("location.reload()", 2000);
+                } else {
+                    self.$message({
+                        type: "warning",
+                        message: data.message
+                    });
+                }
+            },
+
+            createInterface() {
+                let _interfaceList = this.interfaceList;
+                if(_interfaceList.length==0){
+                    this.$message({
+                        type: "warning",
+                        message: "请设置"
+                    });
+                }
+                for (let i = 0; i < _interfaceList.length; i++) {
+                    let checkList = typeof _interfaceList[i].checkList == "string" ? jQuery.parseJSON(_interfaceList[i].checkList) : _interfaceList[i].checkList;
+                    let selectedList = [];
+                    for (let j = 0; j < checkList.length; j++) {
+                        if (checkList[j].selected) {
+                            selectedList.push(checkList[j]);
+                        }
+                    }
+                    if (selectedList.length == 0) {
+                        _interfaceList[i].checkList = [];
+                        continue;
+                    }
+                    for(let k=0;k<selectedList.length;k++){
+                        let rules = selectedList[k].rule;
+                        rules.forEach((item,index)=>{
+                            if(!item.type){
+                                rules.splice(index, 1);
+                            }
+                            if(typeof item.numbers == "string"){
+                                let _arr1 = item.numbers.split(",");
+                                for(let n=0;n<_arr1.length;n++){
+                                    _arr1[n] = parseInt(_arr1[n]);
+                                }
+                                item.numbers = _arr1;
+                            }
+                        });
+                        selectedList[k].rule = rules;
+                    }
+                    _interfaceList[i].checkList = selectedList;
+                }
+
+                let params = {
+                    dbConfig: { dbId: this.form.dbId },
+                    tableName: this.form.tableName,
+                    author: this.form.author,
+                    prefix: this.form.prefix,
+                    pUriAlias: this.form.pUriAlias,
+                    interfaces: _interfaceList
+                };
+
+                console.log(JSON.stringify(params));
+
+                let self = this;
+                let url = HOST + "generate/create";
+                jQuery.ajax({
+                    type: "post",
+                    url: url,
+                    data: JSON.stringify(params),
+                    dataType: "json",
+                    async: true,
+                    contentType: "application/json",
+                    success: function (data) {
+                        if (data.code == 200) {
+                            self.$message({
+                                type: "success",
+                                message: "操作完成！"
+                            });
+                            setTimeout("location.reload()", 2000);
+                        } else {
+                            self.$message({
+                                type: "warning",
+                                message: data.message
+                            });
+                        }
+                    }, error: function (err) {
+                        self.$message({
+                            type: "error",
+                            message: "操作失败！"
+                        });
+                    }
+                });
+            }
+
+        }
+    })
+</script>
+</body>
+
+</html>
